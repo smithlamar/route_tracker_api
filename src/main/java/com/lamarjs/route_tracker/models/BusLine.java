@@ -19,7 +19,7 @@ package com.lamarjs.route_tracker.models;
 import java.io.IOException;
 import java.net.MalformedURLException;
 
-import com.lamarjs.route_tracker.services.APIRequest;
+import com.lamarjs.route_tracker.services.BustimeAPIRequest;
 
 /**
  *
@@ -105,7 +105,7 @@ public class BusLine {
      */
     public void refreshDirections() throws MalformedURLException, IOException {
 
-        APIRequest request = new APIRequest(APIRequest.GET_BUS_DIRECTIONS, APIRequest.RT + rt);
+        BustimeAPIRequest request = new BustimeAPIRequest(BustimeAPIRequest.GET_BUS_DIRECTIONS, BustimeAPIRequest.RT + rt);
         request.send();
         directions = request.parseDirections();
     }
@@ -125,7 +125,7 @@ public class BusLine {
          */
         for (Direction direction : directions) {
 
-            APIRequest request = new APIRequest(APIRequest.GET_BUS_STOPS, APIRequest.RT + rt, APIRequest.DIR + direction.getPercEncDirection());
+            BustimeAPIRequest request = new BustimeAPIRequest(BustimeAPIRequest.GET_BUS_STOPS, BustimeAPIRequest.RT + rt, BustimeAPIRequest.DIR + direction.getPercEncDirection());
             request.send();
             direction.stops = request.parseStops();
         }
