@@ -20,9 +20,11 @@ package com.lamarjs.route_tracker.models;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
-import java.util.HashMap;
-
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import com.lamarjs.route_tracker.services.BustimeAPIRequest;
 
 /**
@@ -32,11 +34,13 @@ import com.lamarjs.route_tracker.services.BustimeAPIRequest;
  * @author Lamar J. Smith
  */
 
+@JsonRootName(value = "bustime-response")
 public class BusLine {
 
 	private final String rt; // route code (9, 6, 1152, X9)
 	private final String rtnm; // route name
 	private final String rtclr; // route color hex value stored as a string
+	@JsonProperty("directions")
 	private ArrayList<Direction> directions; // List of direction objects
 
 	/**
@@ -117,10 +121,9 @@ public class BusLine {
 		String responseBody = request.send().getResponse();
 		
 		// TODO: translate json into direction object
-		ObjectMapper mapper = new ObjectMapper();
-		String directionsJson = mapper.readTree(responseBody).get("bustime-response").asText();
-		
-		// directions =
+		ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.UNWRAP_ROOT_VALUE, true);
+	    ObjectReader reader = mapper.readerForUpdating(directions).withRootName("bustime-response");
+	    directions = reader.readValue(responseBody);
 		
 	}
 
@@ -151,9 +154,11 @@ public class BusLine {
 	/**
 	 * Direction class used to model CTA API direction data for the Gson parser.
 	 */
+	@JsonRootName(value = "bustime-response")
 	public class Direction {
-
+		@JsonProperty("dir")
 		private final String dir;
+		@JsonProperty("stops")
 		private ArrayList<Stop> stops;
 
 		/**
