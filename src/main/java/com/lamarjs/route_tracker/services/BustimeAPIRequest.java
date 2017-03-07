@@ -104,9 +104,10 @@ public class BustimeAPIRequest {
 	 * 
 	 * @throws MalformedURLException
 	 */
-	public void buildGetRoutesRequest() throws MalformedURLException {
+	public BustimeAPIRequest buildGetRoutesRequest() throws MalformedURLException {
 		// Build the request.
 		requestURL = new URL(BUSTIME_REQUEST_BASE + GET_BUS_ROUTES + API_KEY + key + F_JSON);
+		return this;
 	}
 
 	/**
@@ -120,25 +121,26 @@ public class BustimeAPIRequest {
 	 * @param urlParameters
 	 * @throws MalformedURLException
 	 */
-	public void buildRequestURL(String requestType, String... urlParameters) throws MalformedURLException {
+	public BustimeAPIRequest buildRequestURL(String requestType, String... urlParameters) throws MalformedURLException {
 		requestURL = new URL((BUSTIME_REQUEST_BASE + requestType + API_KEY + key + Arrays.toString(urlParameters) + F_JSON)
 				.replaceAll("\\[", "").replaceAll("]", "").replaceAll(",", "").replaceAll(" ", ""));
+		return this;
 	}
 
 	/**
 	 * Sends the last built requestURL. A buildRequestURL method should be called first to create a valid request. 
 	 * @throws java.io.IOException
 	 */
-	public String send() throws IOException {
+	public BustimeAPIRequest send() throws IOException {
 		responseBody = IOUtils.toString(requestURL, "UTF-8");
-		return responseBody;
+		return this;
 	}
 
 
 	/**
 	 * @return The last received response body.
 	 */
-	public String getLastResponse() {
+	public String getResponse() {
 		return responseBody;
 	}
 	/**
