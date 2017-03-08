@@ -20,9 +20,16 @@ package com.lamarjs.route_tracker.models;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.NoSuchElementException;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.lamarjs.route_tracker.services.BustimeAPIRequest;
@@ -34,14 +41,15 @@ import com.lamarjs.route_tracker.services.BustimeAPIRequest;
  * @author Lamar J. Smith
  */
 
-@JsonRootName(value = "bustime-response")
 public class BusLine {
 
-	private final String rt; // route code (9, 6, 1152, X9)
-	private final String rtnm; // route name
-	private final String rtclr; // route color hex value stored as a string
-	@JsonProperty("directions")
+	private String rt; // route code (9, 6, 1152, X9)
+	private String rtnm; // route name
+	private String rtclr; // route color hex value stored as a string
 	private ArrayList<Direction> directions; // List of direction objects
+
+	public BusLine() {
+	};
 
 	/**
 	 *
@@ -54,29 +62,48 @@ public class BusLine {
 		this.rtnm = rtnm;
 		this.rtclr = rtclr;
 	}
+	
+	public BusLine(String rt, String rtnm, String rtclr, ArrayList<Direction> directions) {
+		this.rt = rt;
+		this.rtnm = rtnm;
+		this.rtclr = rtclr;
+		this.directions = directions;
+	}
 
 	/**
 	 *
 	 * @return
 	 */
-	public String getRouteCode() {
+	public String getRt() {
 		return rt;
 	}
 
-	/**
-	 *
-	 * @return
-	 */
-	public String getRouteName() {
-		return rtnm;
+	public void setRt(String rt) {
+		this.rt = rt;
 	}
 
 	/**
 	 *
 	 * @return
 	 */
-	public String getRouteColor() {
+	public String getRtnm() {
+		return rtnm;
+	}
+
+	public void setRtnm(String rtnm) {
+		this.rtnm = rtnm;
+	}
+
+	/**
+	 *
+	 * @return
+	 */
+	public String getRtclr() {
 		return rtclr;
+	}
+
+	public void setRtclr(String rtclr) {
+		this.rtclr = rtclr;
 	}
 
 	@Override
@@ -94,6 +121,10 @@ public class BusLine {
 		return directions;
 	}
 
+	public void setDirections(ArrayList<Direction> directions) {
+		this.directions = directions;
+	}
+
 	/**
 	 * This method returns a String list of stops for this route based on the
 	 * chosen direction.
@@ -101,7 +132,11 @@ public class BusLine {
 	 * @param dir
 	 * @return List of stops on this route.
 	 */
-	public ArrayList<Stop> getStops(Direction dir) {
+	public ArrayList<Stop> getStops(Direction dir) throws NoSuchElementException {
+		if (!directions.contains(dir)) {
+			throw new NoSuchElementException("Error attempting to access stops for direction: " + dir
+					+ ". This direction does not exist for the BusLine object: " + this);
+		}
 		return dir.stops;
 	}
 
@@ -109,22 +144,43 @@ public class BusLine {
 	 * This method requests the list of bus directions from the CTA API for this
 	 * bus line and initializes the directions property.
 	 *
-	 * @throws java.net.MalformedURLException
-	 *             if an invalid URL is constructed.
 	 * @throws java.io.IOException
 	 *             if a problem occurs when sending the API request.
 	 */
-	public void refreshDirections() throws MalformedURLException, IOException {
-
+	public void initializeDirections() throws MalformedURLException, IOException {
+		
+		directions = new ArrayList<Direction>();
+		
+		// Request a list of directions from the CTA API
 		BustimeAPIRequest request = new BustimeAPIRequest();
 		request.buildRequestURL(BustimeAPIRequest.GET_BUS_DIRECTIONS, BustimeAPIRequest.RT + rt);
 		String responseBody = request.send().getResponse();
+
+		// TODO: Map the returned Directions for this BusLine to it's directions property using Jackson.
 		
-		// TODO: translate json into direction object
-		ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.UNWRAP_ROOT_VALUE, true);
-	    ObjectReader reader = mapper.readerForUpdating(directions).withRootName("bustime-response");
-	    directions = reader.readValue(responseBody);
+		ArrayList<String> dirs;
 		
+		// TODO: Something about the unwrap root value config setting isn't working the way that I expect.
+		try {
+			ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.UNWRAP_ROOT_VALUE, true);
+			
+			TypeReference<ArrayList<String>> ref = new TypeReference<ArrayList<String>>() {
+			};
+			
+			dirs = mapper.readValue(responseBody, ref);
+			
+			System.out.println(dirs.toString());
+			
+			for (String dir : dirs) {
+				Direction newDirection = new Direction();
+				newDirection.setDirection(dir);
+				directions.add(newDirection);
+			}
+		} catch (JsonParseException e) {
+			e.printStackTrace();
+		} catch (JsonMappingException e) {
+			e.printStackTrace();
+		}
 	}
 
 	/**
@@ -135,38 +191,57 @@ public class BusLine {
 	 * @throws java.io.IOException
 	 */
 
-	public void refreshStops() throws MalformedURLException, IOException {
-		/*
-		 * "responseBody" is the initial destination for the raw response data from
-		 * the URL request. A JsonParser object converts the buffered reader
-		 * into an object that can be further manipulated by the Gson API.
-		 */
-		for (Direction direction : directions) {
-
-			BustimeAPIRequest request = new BustimeAPIRequest();
-			request.buildRequestURL(BustimeAPIRequest.GET_BUS_STOPS,
-					BustimeAPIRequest.RT + rt, BustimeAPIRequest.DIR + direction.getPercEncodedDirection());
-			String responseBody = request.send().getResponse();
-			// TODO: Map stops responseBody to direction.stops = request.parseStops();
+	public void initializeStops() throws MalformedURLException, IOException {
+		for (Direction dir : directions) {
+			dir.initializeStops();
 		}
 	}
 
 	/**
-	 * Direction class used to model CTA API direction data for the Gson parser.
+	 * Direction class used to model CTA API direction data for the Json parser.
 	 */
-	@JsonRootName(value = "bustime-response")
 	public class Direction {
-		@JsonProperty("dir")
-		private final String dir;
-		@JsonProperty("stops")
+
+		// Directions
+		public static final String NORTH = "North Bound";
+		public static final String SOUTH = "South Bound";
+		public static final String EAST = "East Bound";
+		public static final String WEST = "West Bound";
+
+		private String dir;
 		private ArrayList<Stop> stops;
+
+		public Direction() {
+		};
 
 		/**
 		 *
 		 * @param dir
+		 * @param stops
 		 */
-		public Direction(String dir) {
+		public Direction(String dir, ArrayList<Stop> stops) {
 			this.dir = dir;
+			this.stops = stops;
+		}
+
+		/**
+		 * Initializes the stops property for this Direction by requesting the
+		 * list of associated bus stops from the CTA API.
+		 *
+		 * @throws java.net.MalformedURLException
+		 * @throws java.io.IOException
+		 */
+		public void initializeStops() throws MalformedURLException, IOException {
+
+			BustimeAPIRequest request = new BustimeAPIRequest();
+			request.buildRequestURL(BustimeAPIRequest.GET_BUS_STOPS, BustimeAPIRequest.RT + rt,
+					BustimeAPIRequest.DIR + dir);
+			String responseBody = request.send().getResponse();
+
+			// TODO: translate json into direction object
+			ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.UNWRAP_ROOT_VALUE, true);
+			ObjectReader reader = mapper.readerForUpdating(stops).withRootName("bustime-response");
+			stops = reader.readValue(responseBody);
 		}
 
 		/**
@@ -177,12 +252,20 @@ public class BusLine {
 			return dir;
 		}
 
+		public void setDirection(String dir) {
+			this.dir = dir;
+		}
+
 		/**
 		 *
 		 * @return the stops associated with this direction.
 		 */
 		public ArrayList<Stop> getStops() {
 			return stops;
+		}
+
+		public void setStops(ArrayList<Stop> stops) {
+			this.stops = stops;
 		}
 
 		/**
@@ -193,15 +276,6 @@ public class BusLine {
 		public String toString() {
 			return dir;
 		}
-		
-        /**
-        *
-        * @return direction as a string with percent encoding for spaces.
-        */
-       public String getPercEncodedDirection() {
-           return dir.replaceAll(" ", "%20");
-       }
-
 	}
 
 	/**
@@ -209,10 +283,13 @@ public class BusLine {
 	 */
 	public class Stop {
 
-		private final int stpid; // stop id
-		private final String stpnm; // stop name
-		private final double lat; // latitude
-		private final double lon; // longitude
+		private int stpid; // stop id
+		private String stpnm; // stop name
+		private double lat; // latitude
+		private double lon; // longitude
+
+		public Stop() {
+		};
 
 		/**
 		 *
@@ -244,11 +321,19 @@ public class BusLine {
 			return stpid;
 		}
 
+		public void setStpid(int stpid) {
+			this.stpid = stpid;
+		}
+
 		/**
 		 * @return the stop name
 		 */
 		public String getStpnm() {
 			return stpnm;
+		}
+
+		public void setStpnm(String stpnm) {
+			this.stpnm = stpnm;
 		}
 
 		/**
@@ -258,11 +343,19 @@ public class BusLine {
 			return lat;
 		}
 
+		public void setLat(Double lat) {
+			this.lat = lat;
+		}
+
 		/**
 		 * @return the longitude
 		 */
 		public double getLon() {
 			return lon;
+		}
+
+		public void setLon(Double lon) {
+			this.lon = lon;
 		}
 
 	}

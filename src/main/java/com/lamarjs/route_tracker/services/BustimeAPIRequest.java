@@ -76,13 +76,7 @@ public class BustimeAPIRequest {
 	 */
 	public static final String GET_BUS_PREDICTIONS = "getpredictions";
 
-	// Directions
-	public static final String NORTH = "northbound";
-	public static final String SOUTH = "southbound";
-	public static final String EAST = "eastbound";
-	public static final String WEST = "westbound";
 
-	
 	// Properties
 	private URL requestURL; // The request URL.
 	private String responseBody; // The response returned by the CTA API.
@@ -114,8 +108,8 @@ public class BustimeAPIRequest {
 	 * Builds a well formated request url for the CTA API. The constants in this
 	 * class provide the proper format for each parameter. All that is required
 	 * is to add the value after each constant. Ex: APIRequest(GET_BUS_STOPS,
-	 * RT, X9, DIR, SOUTH) will return a request URL for a list of stops along
-	 * the Southbound X9 - Express Ashland bus.
+	 * RT, X9, DIR, BusLine.SOUTH) will return a request URL for a list of stops along
+	 * the South Bound X9 - Express Ashland bus.
 	 * 
 	 * @param requestType
 	 * @param urlParameters
@@ -123,7 +117,7 @@ public class BustimeAPIRequest {
 	 */
 	public BustimeAPIRequest buildRequestURL(String requestType, String... urlParameters) throws MalformedURLException {
 		requestURL = new URL((BUSTIME_REQUEST_BASE + requestType + API_KEY + key + Arrays.toString(urlParameters) + F_JSON)
-				.replaceAll("\\[", "").replaceAll("]", "").replaceAll(",", "").replaceAll(" ", ""));
+				.replaceAll("\\[", "").replaceAll("]", "").replaceAll(",", "").replaceAll(" ", "%20"));
 		return this;
 	}
 

@@ -14,17 +14,17 @@ import com.lamarjs.route_tracker.models.BusLine.Direction;
 public class BusLineTest {
 	
 	BusLine line;
-	
 	BustimeAPIRequest request;
+	
 	@Before
 	public void setUp() {
-		line = new BusLine("1", "Bronzeville/Union Station", "#336633");
+		line = new BusLine("1", "Bronzeville/Union Station", "#ffffff");
 	}
 
 	@Test
-	public void RefreshDirectionstest() {
+	public void BusLineInitializeDirectionstest() {
 		try {
-			line.refreshDirections();
+			line.initializeDirections();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
