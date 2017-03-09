@@ -20,18 +20,19 @@ package com.lamarjs.route_tracker.models;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.lamarjs.route_tracker.services.BustimeAPIRequest;
 
 /**
@@ -62,7 +63,7 @@ public class BusLine {
 		this.rtnm = rtnm;
 		this.rtclr = rtclr;
 	}
-	
+
 	public BusLine(String rt, String rtnm, String rtclr, ArrayList<Direction> directions) {
 		this.rt = rt;
 		this.rtnm = rtnm;
@@ -148,34 +149,28 @@ public class BusLine {
 	 *             if a problem occurs when sending the API request.
 	 */
 	public void initializeDirections() throws MalformedURLException, IOException {
-		
+
 		directions = new ArrayList<Direction>();
-		
+
 		// Request a list of directions from the CTA API
 		BustimeAPIRequest request = new BustimeAPIRequest();
 		request.buildRequestURL(BustimeAPIRequest.GET_BUS_DIRECTIONS, BustimeAPIRequest.RT + rt);
 		String responseBody = request.send().getResponse();
 
-		// TODO: Map the returned Directions for this BusLine to it's directions property using Jackson.
-		
-		ArrayList<String> dirs;
-		
-		// TODO: Something about the unwrap root value config setting isn't working the way that I expect.
+		// Parse the response and assign the returned directions to this
+		// BusLine's directions property
 		try {
-			ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.UNWRAP_ROOT_VALUE, true);
-			
-			TypeReference<ArrayList<String>> ref = new TypeReference<ArrayList<String>>() {
-			};
-			
-			dirs = mapper.readValue(responseBody, ref);
-			
-			System.out.println(dirs.toString());
-			
-			for (String dir : dirs) {
-				Direction newDirection = new Direction();
-				newDirection.setDirection(dir);
-				directions.add(newDirection);
+			ObjectMapper mapper = new ObjectMapper();
+
+			JsonNode directionsNode = mapper.readTree(responseBody).get("bustime-response").get("directions");
+
+			Iterator<JsonNode> iterator = directionsNode.elements();
+			while (iterator.hasNext()) {
+				Direction temp = new Direction();
+				temp.setDirection(iterator.next().get("dir").asText());
+				directions.add(temp);
 			}
+
 		} catch (JsonParseException e) {
 			e.printStackTrace();
 		} catch (JsonMappingException e) {
@@ -202,11 +197,11 @@ public class BusLine {
 	 */
 	public class Direction {
 
-		// Directions
-		public static final String NORTH = "North Bound";
-		public static final String SOUTH = "South Bound";
-		public static final String EAST = "East Bound";
-		public static final String WEST = "West Bound";
+		// Direction Names
+		public static final String NORTH = "Northbound";
+		public static final String SOUTH = "Southbound";
+		public static final String EAST = "Eastbound";
+		public static final String WEST = "Westbound";
 
 		private String dir;
 		private ArrayList<Stop> stops;
@@ -232,16 +227,35 @@ public class BusLine {
 		 * @throws java.io.IOException
 		 */
 		public void initializeStops() throws MalformedURLException, IOException {
-
+			stops = new ArrayList<Stop>();
 			BustimeAPIRequest request = new BustimeAPIRequest();
 			request.buildRequestURL(BustimeAPIRequest.GET_BUS_STOPS, BustimeAPIRequest.RT + rt,
 					BustimeAPIRequest.DIR + dir);
 			String responseBody = request.send().getResponse();
+			System.out.println(request.getLastRequest());
+			System.out.println(responseBody);
 
-			// TODO: translate json into direction object
-			ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.UNWRAP_ROOT_VALUE, true);
-			ObjectReader reader = mapper.readerForUpdating(stops).withRootName("bustime-response");
-			stops = reader.readValue(responseBody);
+			// Parse the response and assign the returned directions to this
+			// BusLine's directions property
+			try {
+				ObjectMapper mapper = new ObjectMapper();
+
+				JsonNode stopsNode = mapper.readTree(responseBody).get("bustime-response").get("stops");
+				System.out.println(stopsNode.get(0));
+				Iterator<JsonNode> iterator = stopsNode.elements();
+				while (iterator.hasNext()) {
+					JsonNode element = iterator.next();
+					Stop temp = new Stop(element.get("stpid").asInt(), element.get("stpnm").asText(),
+							element.get("lat").asDouble(), element.get("lon").asDouble());
+					System.out.println("temp values after assignment: " + temp.getStpid() + " " + temp.getStpnm() + " " + temp.getLat() + " " + temp.getLon());
+					stops.add(temp);
+				}
+
+			} catch (JsonParseException e) {
+				e.printStackTrace();
+			} catch (JsonMappingException e) {
+				e.printStackTrace();
+			}
 		}
 
 		/**
@@ -276,6 +290,7 @@ public class BusLine {
 		public String toString() {
 			return dir;
 		}
+
 	}
 
 	/**

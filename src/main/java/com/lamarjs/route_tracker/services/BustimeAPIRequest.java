@@ -117,7 +117,7 @@ public class BustimeAPIRequest {
 	 */
 	public BustimeAPIRequest buildRequestURL(String requestType, String... urlParameters) throws MalformedURLException {
 		requestURL = new URL((BUSTIME_REQUEST_BASE + requestType + API_KEY + key + Arrays.toString(urlParameters) + F_JSON)
-				.replaceAll("\\[", "").replaceAll("]", "").replaceAll(",", "").replaceAll(" ", "%20"));
+				.replaceAll("\\[", "").replaceAll("]", "").replaceAll(",", "").replaceAll(" ", ""));
 		return this;
 	}
 
