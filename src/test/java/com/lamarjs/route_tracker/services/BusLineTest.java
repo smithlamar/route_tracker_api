@@ -13,6 +13,8 @@ import com.lamarjs.route_tracker.models.BusLine.Direction;
 
 public class BusLineTest {
 
+	// TODO: Add real tests!
+
 	BusLine line;
 	BustimeAPIRequest request;
 

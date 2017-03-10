@@ -1,0 +1,1 @@
+http://ctabustracker.com/bustime/api/v2/getstops?key=***REMOVED***&rt=1&dir=Northbound&format=json
