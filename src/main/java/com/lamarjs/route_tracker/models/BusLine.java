@@ -100,7 +100,7 @@ public class BusLine {
 	 */
 	public void initializeDirections() throws MalformedURLException, IOException {
 		BustimeAPIRequest request = new BustimeAPIRequest();
-		directions = request.requestDirections(this);
+		directions = request.requestDirections(rt);
 	}
 
 	/**
@@ -192,8 +192,8 @@ public class BusLine {
 	 */
 	public class Direction {
 
-		private String dir;
-		private ArrayList<Stop> stops;
+		private String dir; // The name of this direction.
+		private ArrayList<Stop> stops; // This direction's stops.
 
 		public Direction() {
 		};
@@ -219,7 +219,7 @@ public class BusLine {
 		 */
 		public void initializeStops() throws MalformedURLException, IOException {
 			BustimeAPIRequest request = new BustimeAPIRequest();
-			stops = request.requestStops(rt, this);
+			stops = request.requestStops(rt, dir);
 		}
 
 		public String getDirectionName() {
