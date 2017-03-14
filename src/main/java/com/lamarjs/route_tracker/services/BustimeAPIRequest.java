@@ -4,9 +4,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
+import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
 
@@ -17,86 +16,100 @@ import com.lamarjs.route_tracker.models.BusLine;
 import com.lamarjs.route_tracker.models.BusLine.Direction;
 import com.lamarjs.route_tracker.models.BusLine.Stop;
 
-//TODO: Add tests for all url building methods and json parsing methods.
-
 /**
- *
+ * This class represents a request to (and response from) the CTA Bustime
+ * (BusTracker) API. It also provides the methods needed to build then send the
+ * requests as well as parse the json response's returned by them into the
+ * associated objets when provided. The enums {@link RequestType} and
+ * {@link Parameter} represent the legal components of any valid request to the
+ * Bustime API.
+ * 
  * @author Lamar J. Smith
  */
 public class BustimeAPIRequest {
 
 	// Base request components
-
 	/**
 	 * This is the base component of the CTA API's request URL. The key and any
 	 * parameters that follow it are appended to the end of this string.
 	 */
 	public static final String BUSTIME_REQUEST_BASE = "http://ctabustracker.com/bustime/api/v2/";
 
-	// Request Parameters
-
-	// TODO: Implement most of these constants as an inner enum class.
-	public enum Parameter {
-		KEY("?key="), ROUTE("&rt="), DIRECTION("&dir="), STOPID("&stpid="), LIMIT("&top=");
-
-		private final String paramFormat;
-
-		private Parameter(String param) {
-			this.paramFormat = param;
-		}
-
-		public String format() {
-			return paramFormat;
-		}
-	}
-
 	/**
 	 * The API key, which can be stored as an environment variable on the
-	 * server.
+	 * server, or set explicitly.
 	 */
 	public static final String API_KEY = "?key=";
 
 	/**
 	 * This is a parameter that can be added to the request to get back a JSON
 	 * response instead of XML. This utility class has methods for handling the
-	 * parsing of JSON responses into equivalent objects. XML parsing has not
-	 * been implemented.
+	 * parsing of JSON responses into equivalent objects. This class does not
+	 * implement any helper methods for parsing the XML version of the responses
+	 * so it is generally a good idea to include this parameter when the option
+	 * is given.
 	 */
 	public static final String F_JSON = "&format=json";
 
-	/**
-	 * The route parameter indicates a specific route for those requests that
-	 * require one as input.
-	 */
-	public static final String RT = "&rt=";
+	// RequestURL Parameter Formats
+	public enum Parameter {
+		/**
+		 * The route parameter indicates a specific route for those requests
+		 * that require one as input.
+		 */
+		ROUTE("&rt="),
 
-	/**
-	 * The direction parameter indicates a specific direction traveled by a
-	 * specified route.
-	 */
-	public static final String DIR = "&dir=";
+		/**
+		 * The direction parameter indicates a specific direction traveled by a
+		 * specified route.
+		 */
+		DIRECTION("&dir="),
 
-	/**
-	 * The stop id parameter indicates a single stop along a specific direction
-	 * traveled by a specified route.
-	 */
-	public static final String STPID = "&stpid=";
+		/**
+		 * The stop id parameter indicates a single stop along a specific
+		 * direction traveled by a specified route.
+		 */
+		STOPID("&stpid="),
 
-	/**
-	 * The top parameter indicates the total number of predictions to be
-	 * returned by a "getpredictions" request.
-	 */
-	public static final String TOP = "&top=";
+		/**
+		 * The limit parameter indicates the total number of predictions to be
+		 * returned by a "predictions" request.
+		 */
+		LIMIT("&top=");
 
-	// Direction Names
-	public static final String NORTH = "Northbound";
-	public static final String SOUTH = "Southbound";
-	public static final String EAST = "Eastbound";
-	public static final String WEST = "Westbound";
+		private final String Format;
+
+		private Parameter(String param) {
+			this.Format = param;
+		}
+
+		public String format() {
+			return Format;
+		}
+	}
 
 	// Request types
 	public enum RequestType {
-		ROUTES("getroutes"), DIRECTIONS("getdirections"), STOPS("getstops"), PREDICTIONS("getpredictions");
+		/**
+		 * Returns a list of BusLines available.
+		 */
+		ROUTES("getroutes"),
+
+		/**
+		 * Returns a list of directions for the specified route.
+		 */
+		DIRECTIONS("getdirections"),
+
+		/**
+		 * Returns a list of stops for the specified route and direction
+		 * combination.
+		 */
+		STOPS("getstops"),
+
+		/**
+		 * Returns a set of ETAs for a specific stop along a bus route.
+		 */
+		PREDICTIONS("getpredictions");
 
 		private final String format;
 
@@ -109,31 +122,17 @@ public class BustimeAPIRequest {
 		}
 	}
 
-	/**
-	 * Returns a list of BusLines available.
-	 */
-	public static final String GET_BUS_ROUTES = "getroutes";
-
-	/**
-	 * Returns a list of directions for the specified route.
-	 */
-	public static final String GET_BUS_DIRECTIONS = "getdirections";
-
-	/**
-	 * Returns a list of stops for the specified route and direction
-	 * combination.
-	 */
-	public static final String GET_BUS_STOPS = "getstops";
-
-	/**
-	 * Returns a set of ETAs for a specific stop along a bus route.
-	 */
-	public static final String GET_BUS_PREDICTIONS = "getpredictions";
+	// Direction Names
+	public static final String NORTH = "Northbound";
+	public static final String SOUTH = "Southbound";
+	public static final String EAST = "Eastbound";
+	public static final String WEST = "Westbound";
 
 	// Properties
 	private URL requestURL; // The request URL.
 	private String responseBody; // The response returned by the CTA API.
-	private String key;
+	private String key; // The API key component of a request that can be set as
+						// an environment variable or explicitly set.
 
 	// Constructors
 
@@ -165,65 +164,85 @@ public class BustimeAPIRequest {
 	}
 
 	/**
-	 * Builds a well formated requestURL for the CTA API that returns a list of
-	 * all available bus routes.
-	 * 
-	 * @throws MalformedURLException
-	 */
-	public BustimeAPIRequest buildGetRoutesRequest() throws MalformedURLException {
-		// Build the request
-		requestURL = new URL(
-				BUSTIME_REQUEST_BASE + RequestType.ROUTES.format + Parameter.KEY.paramFormat + key + F_JSON);
-		return this;
-	}
-
-	/**
-	 * Builds a request url for the CTA API. The constants in this class provide
-	 * the proper format for the parameters and other elements that form the
-	 * final URL. All that is required is to add the value after each constant.
-	 * Ex: APIRequest(GET_BUS_STOPS, RT, "x9", DIR, BusLine.SOUTH) will return a
-	 * request URL for a list of stops along the South Bound X9 - Express
-	 * Ashland bus.
+	 * Builds a well formated request url for the CTA API. The enums:
+	 * {@link Parameter} and {@link RequestType} in this class provide the
+	 * proper request name and format for the parameters that make up the final
+	 * URL.
 	 * 
 	 * @param requestType
+	 *            {@link Parameter} representing the request type to made.
 	 * @param urlParameters
+	 *            A map of <{@link Parameter}, {@linkString}> pairs that each
+	 *            represent a parameter and value to be included in the
+	 *            requestURL.
 	 * @throws MalformedURLException
 	 */
-	public BustimeAPIRequest buildRequestURL(String requestType, String... urlParameters) throws MalformedURLException {
-		requestURL = new URL(
-				(BUSTIME_REQUEST_BASE + requestType + API_KEY + key + Arrays.toString(urlParameters) + F_JSON)
-						.replaceAll("\\[", "").replaceAll("]", "").replaceAll(",", "").replaceAll(", ", ""));
-		return this;
-	}
-
-	// TODO: This version of the buildRequestURL() method should accept a map of
-	// enum objects that represent the possible parameters and use only the ones
-	// that have values assigned.
-
-	/**
-	 * Builds a well formated request url for the CTA API. The constants in this
-	 * class provide the proper format for the parameters and other elements
-	 * that form the final URL. All that is required is to add the value after
-	 * each constant. Ex: APIRequest(GET_BUS_STOPS, RT, "x9", DIR,
-	 * BusLine.SOUTH) will return a request URL for a list of stops along the
-	 * South Bound X9 - Express Ashland bus.
-	 * 
-	 * @param requestType
-	 * @param urlParameters
-	 * @throws MalformedURLException
-	 */
-	public BustimeAPIRequest buildRequestURL(RequestType requestType, LinkedHashMap<Parameter, String> urlParameters,
+	public BustimeAPIRequest buildRequestURL(RequestType requestType, Map<Parameter, String> urlParameters,
 			Boolean returnJson) throws MalformedURLException {
 
-		String json = returnJson ? F_JSON : "";
-		StringBuilder paramsBuilder = new StringBuilder(json);
-
+		StringBuilder paramsBuilder = new StringBuilder();
 		for (Parameter param : urlParameters.keySet()) {
-			paramsBuilder.append(param.paramFormat).append(urlParameters.get(param));
+			paramsBuilder.append(param.Format).append(urlParameters.get(param));
 		}
-		requestURL = new URL(BUSTIME_REQUEST_BASE + requestType.format + paramsBuilder.toString());
+		paramsBuilder.append(returnJson ? F_JSON : "");
+
+		StringBuilder requestBuilder = new StringBuilder(BUSTIME_REQUEST_BASE).append(requestType.format)
+				.append(API_KEY).append(key).append(paramsBuilder.toString());
+		requestURL = new URL(requestBuilder.toString());
 
 		return this;
+	}
+
+	/**
+	 * Builds a well formated request url for the CTA API. The enums:
+	 * {@link Parameter} and {@link RequestType} in this class provide the
+	 * proper request name and format for the parameters that make up the final
+	 * URL. <br>
+	 * <br>
+	 * <b>Ex:</b> buildRequestURL(Request.STOPS, Parameter.ROUTE + "x9" +
+	 * Parameter.DIRECTION + BusLine.SOUTH) will return a request URL for a list
+	 * of stops along the South Bound X9 - Express Ashland bus.
+	 * 
+	 * @param requestType
+	 * @param urlParameters
+	 * @param returnJson
+	 *            Requests response as json
+	 * @throws MalformedURLException
+	 */
+	public BustimeAPIRequest buildRequestURL(RequestType requestType, String urlParameters, Boolean returnJson)
+			throws MalformedURLException {
+
+		StringBuilder requestBuilder = new StringBuilder(BUSTIME_REQUEST_BASE).append(requestType.format)
+				.append(API_KEY).append(key).append(urlParameters).append(returnJson ? F_JSON : "");
+		requestURL = new URL(requestBuilder.toString());
+		return this;
+	}
+
+	/**
+	 * Convenience method similar to
+	 * {@link BustimeAPIRequest#buildRequestURL(RequestType, String, Boolean)}
+	 * but with Json return type enabled by default.
+	 * 
+	 * @see BustimeAPIRequest#buildRequestURL(RequestType, String, Boolean)
+	 * @param requestType
+	 * @param urlParameters
+	 * @return
+	 * @throws MalformedURLException
+	 */
+	public BustimeAPIRequest buildRequestURL(RequestType requestType, String urlParameters)
+			throws MalformedURLException {
+		return this.buildRequestURL(requestType, urlParameters, true);
+	}
+
+	/**
+	 * Convenience method to build a valid Routes ("getRoutes") requestURL
+	 * 
+	 * @param requestType
+	 * @param urlParameters
+	 * @throws MalformedURLException
+	 */
+	public BustimeAPIRequest buildRoutesRequestURL() throws MalformedURLException {
+		return this.buildRequestURL(RequestType.ROUTES, "", true);
 	}
 
 	/**
@@ -243,25 +262,23 @@ public class BustimeAPIRequest {
 	 * 
 	 * @return A list of BusLine objects that represents all routes serviced by
 	 *         the CTA. Further initialization is required for each BusLine
-	 *         object by calling each instances intialize() method.
-	 *         method.
+	 *         object by calling each instances intialize() method. method.
 	 * @throws IOException
 	 * 
 	 * @throws MalformedURLException
 	 */
 	public ArrayList<BusLine> requestRoutes() throws MalformedURLException, IOException {
 
-		// Build the get routes request
-		buildRequestURL(RequestType.ROUTES.format);
-		send();
+		// Send the get routes request
+		buildRoutesRequestURL().send();
 
 		// TODO: Add tests to confirm that request is properly formatted, sent,
-		// and raw responsebody looks like it should.
+		// and raw responseBody looks like it should.
 
 		// Parse the response into a directions list.
 		ArrayList<BusLine> busLines = new ArrayList<>();
 
-		Iterator<JsonNode> busLinesIterator = requestBusLinesJsonIterator(responseBody);
+		Iterator<JsonNode> busLinesIterator = requestRoutesJsonIterator(responseBody);
 
 		while (busLinesIterator.hasNext()) {
 			JsonNode node = busLinesIterator.next();
@@ -271,14 +288,15 @@ public class BustimeAPIRequest {
 		return busLines;
 	}
 
-	public Iterator<JsonNode> requestBusLinesJsonIterator(String busLinesJsonString)
+	public Iterator<JsonNode> requestRoutesJsonIterator(String routesJsonString)
 			throws JsonProcessingException, IOException {
 		ObjectMapper mapper = new ObjectMapper();
-		JsonNode busLinesNode = mapper.readTree(busLinesJsonString).get("bustime-response").get("routes");
+		JsonNode busLinesNode = mapper.readTree(routesJsonString).get("bustime-response").get("routes");
 		return busLinesNode.elements(); // FIXME: Getting null pointer here on
 										// live request of getBusLines. Likely
 										// due to error in json parsing with the
-										// mapper or some kind or
+										// mapper or some wiring issue between
+										// the methods involved.
 	}
 
 	/**
@@ -297,7 +315,7 @@ public class BustimeAPIRequest {
 	public ArrayList<Direction> requestDirections(String routeCode) throws MalformedURLException, IOException {
 
 		// Build the directions request
-		buildRequestURL(GET_BUS_DIRECTIONS, RT + routeCode);
+		buildRequestURL(RequestType.DIRECTIONS, Parameter.ROUTE + routeCode);
 		send();
 
 		// Parse the response into a directions list.
@@ -338,7 +356,9 @@ public class BustimeAPIRequest {
 	public ArrayList<Stop> requestStops(String rt, String direction) throws MalformedURLException, IOException {
 
 		// Build the stops request
-		buildRequestURL(GET_BUS_STOPS, RT + rt, BustimeAPIRequest.DIR + direction);
+		StringBuilder paramsBuilder = new StringBuilder(Parameter.ROUTE.Format).append(rt)
+				.append(Parameter.DIRECTION.Format).append(direction);
+		buildRequestURL(RequestType.STOPS, paramsBuilder.toString());
 		send();
 
 		// Parse the response into a stops list.

@@ -11,7 +11,7 @@ import com.lamarjs.route_tracker.services.BustimeAPIRequest;
 
 @RestController
 public class BustimeRequestController {
-	
+
 	@RequestMapping(value = "/getbuslines")
 	public ArrayList<BusLine> getBusLines() {
 		ArrayList<BusLine> busLines = null;
@@ -23,4 +23,8 @@ public class BustimeRequestController {
 		}
 		return busLines;
 	}
+
+	// TODO: /"getpredictions" request mapping. should be able to return
+	// predictions for the requested stops along a particular BusLine (route) in one
+	// direction.
 }

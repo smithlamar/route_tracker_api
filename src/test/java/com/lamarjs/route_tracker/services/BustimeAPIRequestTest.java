@@ -12,8 +12,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.lamarjs.route_tracker.services.BustimeAPIRequest.RequestType;
-
 public class BustimeAPIRequestTest extends junit.framework.TestSuite {
 
 	BustimeAPIRequest request;
@@ -35,15 +33,9 @@ public class BustimeAPIRequestTest extends junit.framework.TestSuite {
 	// Build request URL
 
 	@Test
-	public void routes_build_request_url_using_enum_has_correct_format() {
+	public void build_routes_request_url_has_correct_format() throws MalformedURLException {
 		request.setKey("test");
-
-		try {
-			request.buildRequestURL(RequestType.ROUTES.format());
-		} catch (MalformedURLException e) {
-			e.printStackTrace();
-		}
-		System.out.println(request.getRequestURL());
+		request.buildRoutesRequestURL();
 		assertEquals(sampleFiles.get("urls").get("routes"), request.getRequestURL().toString());
 	}
 

@@ -27,9 +27,10 @@ import com.lamarjs.route_tracker.services.BustimeAPIRequest;
 /**
  * <p>
  * This object represents a single bus route/bus line. That is: one bus route,
- * it's directions, and all of the stops associated with each of those
+ * its directions, and all of the stops associated with each of those
  * directions. The available CTA BusTracker API calls offer the data associated
- * with a BusLine across a disparate set of end-points.
+ * with a BusLine across a disparate set of end-points. Generally, a "route", as
+ * the CTA API provides it does not include its associated directions and stops.
  * </p>
  * <p>
  * The end result is that several initialization steps are required to build a
@@ -40,8 +41,8 @@ import com.lamarjs.route_tracker.services.BustimeAPIRequest;
  * <li>A list of routes (BusLine objects) must be requested from the CTA API.
  * Each BusLine object returned only contains the route code, route name, and
  * route color properties.</li>
- * <li>The "directions" property must then be initialized by a second call to
- * the CTA API.</li>
+ * <li>The "directions" property for a single BusLine must then be initialized
+ * by a second call to the CTA API.</li>
  * <li>For each Direction returned for a BusLine, the stops along that direction
  * must be initialized with separate CTA API calls.</li>
  * </ol>
@@ -86,9 +87,9 @@ public class BusLine {
 	 * @throws java.net.MalformedURLException
 	 * @throws java.io.IOException
 	 */
-	public void initialize() throws MalformedURLException, IOException {
-		initializeDirections();
-		initializeStops();
+	public void initialize(BustimeAPIRequest request) throws MalformedURLException, IOException {
+		initializeDirections(request);
+		initializeStops(request);
 	}
 
 	/**
@@ -98,8 +99,7 @@ public class BusLine {
 	 * @throws java.net.MalformedURLException
 	 * @throws java.io.IOException
 	 */
-	public void initializeDirections() throws MalformedURLException, IOException {
-		BustimeAPIRequest request = new BustimeAPIRequest();
+	public void initializeDirections(BustimeAPIRequest request) throws MalformedURLException, IOException {
 		directions = request.requestDirections(rt);
 	}
 
@@ -111,9 +111,9 @@ public class BusLine {
 	 * @throws java.net.MalformedURLException
 	 * @throws java.io.IOException
 	 */
-	public void initializeStops() throws MalformedURLException, IOException {
+	public void initializeStops(BustimeAPIRequest request) throws MalformedURLException, IOException {
 		for (Direction dir : directions) {
-			dir.initializeStops();
+			dir.initializeStops(request);
 		}
 	}
 
@@ -217,8 +217,7 @@ public class BusLine {
 		 * @throws java.net.MalformedURLException
 		 * @throws java.io.IOException
 		 */
-		public void initializeStops() throws MalformedURLException, IOException {
-			BustimeAPIRequest request = new BustimeAPIRequest();
+		public void initializeStops(BustimeAPIRequest request) throws MalformedURLException, IOException {
 			stops = request.requestStops(rt, dir);
 		}
 
