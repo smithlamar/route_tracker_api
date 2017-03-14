@@ -41,7 +41,7 @@ public class BusLineTest {
 		 */
 		line.setDirections(null);
 		try {
-			line.initializeDirections();
+			line.initializeDirections(request);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -58,7 +58,7 @@ public class BusLineTest {
 		 */
 		line.setDirections(null);
 		try {
-			line.initializeDirections();
+			line.initializeDirections(request);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -70,7 +70,7 @@ public class BusLineTest {
 	public void direction_initialize_stops_test() {
 		try {
 			Direction dir = line.getDirections().get(0);
-			dir.initializeStops();
+			dir.initializeStops(request);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
