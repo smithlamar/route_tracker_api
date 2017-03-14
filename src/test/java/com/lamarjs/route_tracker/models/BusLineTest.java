@@ -1,4 +1,4 @@
-package com.lamarjs.route_tracker.services;
+package com.lamarjs.route_tracker.models;
 
 import static org.junit.Assert.assertTrue;
 
@@ -10,6 +10,7 @@ import org.junit.Test;
 
 import com.lamarjs.route_tracker.models.BusLine;
 import com.lamarjs.route_tracker.models.BusLine.Direction;
+import com.lamarjs.route_tracker.services.BustimeAPIRequest;
 
 public class BusLineTest {
 
