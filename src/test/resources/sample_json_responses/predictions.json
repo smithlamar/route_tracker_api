@@ -1,0 +1,60 @@
+{
+	"bustime-response": {
+		"prd": [
+			{
+				"tmstmp": "20170314 11:25",
+				"typ": "A",
+				"stpnm": "Michigan \u0026 Balbo",
+				"stpid": "1584",
+				"vid": "1315",
+				"dstp": 4833,
+				"rt": "4",
+				"rtdd": "4",
+				"rtdir": "Northbound",
+				"des": "Illinois Center",
+				"prdtm": "20170314 11:32",
+				"tablockid": "4 -716",
+				"tatripid": "10001019",
+				"dly": false,
+				"prdctdn": "7",
+				"zone": ""
+			},
+			{
+				"tmstmp": "20170314 11:25",
+				"typ": "A",
+				"stpnm": "Michigan \u0026 Balbo",
+				"stpid": "1584",
+				"vid": "1298",
+				"dstp": 5475,
+				"rt": "4",
+				"rtdd": "4",
+				"rtdir": "Northbound",
+				"des": "Illinois Center",
+				"prdtm": "20170314 11:33",
+				"tablockid": "4 -720",
+				"tatripid": "10001006",
+				"dly": false,
+				"prdctdn": "7",
+				"zone": ""
+			},
+			{
+				"tmstmp": "20170314 11:24",
+				"typ": "A",
+				"stpnm": "Michigan \u0026 Balbo",
+				"stpid": "1584",
+				"vid": "1358",
+				"dstp": 16129,
+				"rt": "4",
+				"rtdd": "4",
+				"rtdir": "Northbound",
+				"des": "Illinois Center",
+				"prdtm": "20170314 11:44",
+				"tablockid": "4 -718",
+				"tatripid": "10001021",
+				"dly": false,
+				"prdctdn": "19",
+				"zone": ""
+			}
+		]
+	}
+}
