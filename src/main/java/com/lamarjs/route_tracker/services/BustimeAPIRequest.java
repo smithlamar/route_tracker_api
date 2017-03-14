@@ -239,15 +239,17 @@ public class BustimeAPIRequest {
 	}
 
 	/**
-	 * Requests a list of all operating bus lines.
+	 * Requests a list of all operating bus lines (routes).
 	 * 
 	 * @return A list of BusLine objects that represents all routes serviced by
-	 *         the CTA.
+	 *         the CTA. Further initialization is required for each BusLine
+	 *         object by calling each instances intialize() method.
+	 *         method.
 	 * @throws IOException
 	 * 
 	 * @throws MalformedURLException
 	 */
-	public ArrayList<BusLine> requestBusLines() throws MalformedURLException, IOException {
+	public ArrayList<BusLine> requestRoutes() throws MalformedURLException, IOException {
 
 		// Build the get routes request
 		buildRequestURL(RequestType.ROUTES.format);
@@ -264,13 +266,12 @@ public class BustimeAPIRequest {
 		while (busLinesIterator.hasNext()) {
 			JsonNode node = busLinesIterator.next();
 			busLines.add(new BusLine(node.get("rt").asText(), node.get("rtnm").asText(), node.get("rtclr").asText()));
-
 		}
 
 		return busLines;
 	}
 
-	private Iterator<JsonNode> requestBusLinesJsonIterator(String busLinesJsonString)
+	public Iterator<JsonNode> requestBusLinesJsonIterator(String busLinesJsonString)
 			throws JsonProcessingException, IOException {
 		ObjectMapper mapper = new ObjectMapper();
 		JsonNode busLinesNode = mapper.readTree(busLinesJsonString).get("bustime-response").get("routes");
@@ -388,5 +389,30 @@ public class BustimeAPIRequest {
 	public BustimeAPIRequest setRequestURL(URL requestURL) {
 		this.requestURL = requestURL;
 		return this;
+	}
+
+	/**
+	 * @return the key
+	 */
+	public String getKey() {
+		return key;
+	}
+
+	/**
+	 * @param key
+	 *            the key to set
+	 * @return
+	 */
+	public BustimeAPIRequest setKey(String key) {
+		this.key = key;
+		return this;
+	}
+
+	/**
+	 * @param responseBody
+	 *            the responseBody to set
+	 */
+	public void setResponseBody(String responseBody) {
+		this.responseBody = responseBody;
 	}
 }

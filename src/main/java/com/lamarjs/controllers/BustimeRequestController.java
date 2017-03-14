@@ -16,7 +16,7 @@ public class BustimeRequestController {
 	public ArrayList<BusLine> getBusLines() {
 		ArrayList<BusLine> busLines = null;
 		try {
-			busLines = new BustimeAPIRequest().requestBusLines();
+			busLines = new BustimeAPIRequest().requestRoutes();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
