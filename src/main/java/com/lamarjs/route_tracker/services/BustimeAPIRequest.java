@@ -10,11 +10,14 @@ import java.util.LinkedHashMap;
 
 import org.apache.commons.io.IOUtils;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lamarjs.route_tracker.models.BusLine;
 import com.lamarjs.route_tracker.models.BusLine.Direction;
 import com.lamarjs.route_tracker.models.BusLine.Stop;
+
+//TODO: Add tests for all url building methods and json parsing methods.
 
 /**
  *
@@ -105,7 +108,7 @@ public class BustimeAPIRequest {
 			return format;
 		}
 	}
-	
+
 	/**
 	 * Returns a list of BusLines available.
 	 */
@@ -169,17 +172,18 @@ public class BustimeAPIRequest {
 	 */
 	public BustimeAPIRequest buildGetRoutesRequest() throws MalformedURLException {
 		// Build the request
-		requestURL = new URL(BUSTIME_REQUEST_BASE + RequestType.ROUTES.format + Parameter.KEY.paramFormat + key + F_JSON);
+		requestURL = new URL(
+				BUSTIME_REQUEST_BASE + RequestType.ROUTES.format + Parameter.KEY.paramFormat + key + F_JSON);
 		return this;
 	}
 
 	/**
-	 * Builds a well formated request url for the CTA API. The constants in this
-	 * class provide the proper format for the parameters and other elements
-	 * that form the final URL. All that is required is to add the value after
-	 * each constant. Ex: APIRequest(GET_BUS_STOPS, RT, "x9", DIR,
-	 * BusLine.SOUTH) will return a request URL for a list of stops along the
-	 * South Bound X9 - Express Ashland bus.
+	 * Builds a request url for the CTA API. The constants in this class provide
+	 * the proper format for the parameters and other elements that form the
+	 * final URL. All that is required is to add the value after each constant.
+	 * Ex: APIRequest(GET_BUS_STOPS, RT, "x9", DIR, BusLine.SOUTH) will return a
+	 * request URL for a list of stops along the South Bound X9 - Express
+	 * Ashland bus.
 	 * 
 	 * @param requestType
 	 * @param urlParameters
@@ -194,7 +198,7 @@ public class BustimeAPIRequest {
 
 	// TODO: This version of the buildRequestURL() method should accept a map of
 	// enum objects that represent the possible parameters and use only the ones
-	// that values assigned.
+	// that have values assigned.
 
 	/**
 	 * Builds a well formated request url for the CTA API. The constants in this
@@ -208,17 +212,17 @@ public class BustimeAPIRequest {
 	 * @param urlParameters
 	 * @throws MalformedURLException
 	 */
-	public BustimeAPIRequest buildRequestURL(RequestType requestType, LinkedHashMap<Parameter, String> urlParameters, Boolean returnJson)
-			throws MalformedURLException {
-		
+	public BustimeAPIRequest buildRequestURL(RequestType requestType, LinkedHashMap<Parameter, String> urlParameters,
+			Boolean returnJson) throws MalformedURLException {
+
 		String json = returnJson ? F_JSON : "";
 		StringBuilder paramsBuilder = new StringBuilder(json);
-		
+
 		for (Parameter param : urlParameters.keySet()) {
 			paramsBuilder.append(param.paramFormat).append(urlParameters.get(param));
 		}
 		requestURL = new URL(BUSTIME_REQUEST_BASE + requestType.format + paramsBuilder.toString());
-		
+
 		return this;
 	}
 
@@ -234,7 +238,48 @@ public class BustimeAPIRequest {
 		return this;
 	}
 
-	
+	/**
+	 * Requests a list of all operating bus lines.
+	 * 
+	 * @return A list of BusLine objects that represents all routes serviced by
+	 *         the CTA.
+	 * @throws IOException
+	 * 
+	 * @throws MalformedURLException
+	 */
+	public ArrayList<BusLine> requestBusLines() throws MalformedURLException, IOException {
+
+		// Build the get routes request
+		buildRequestURL(RequestType.ROUTES.format);
+		send();
+
+		// TODO: Add tests to confirm that request is properly formatted, sent,
+		// and raw responsebody looks like it should.
+
+		// Parse the response into a directions list.
+		ArrayList<BusLine> busLines = new ArrayList<>();
+
+		Iterator<JsonNode> busLinesIterator = requestBusLinesJsonIterator(responseBody);
+
+		while (busLinesIterator.hasNext()) {
+			JsonNode node = busLinesIterator.next();
+			busLines.add(new BusLine(node.get("rt").asText(), node.get("rtnm").asText(), node.get("rtclr").asText()));
+
+		}
+
+		return busLines;
+	}
+
+	private Iterator<JsonNode> requestBusLinesJsonIterator(String busLinesJsonString)
+			throws JsonProcessingException, IOException {
+		ObjectMapper mapper = new ObjectMapper();
+		JsonNode busLinesNode = mapper.readTree(busLinesJsonString).get("bustime-response").get("routes");
+		return busLinesNode.elements(); // FIXME: Getting null pointer here on
+										// live request of getBusLines. Likely
+										// due to error in json parsing with the
+										// mapper or some kind or
+	}
+
 	/**
 	 * Requests a list of directions along the from the CTA API for the given
 	 * BusLine
@@ -257,7 +302,7 @@ public class BustimeAPIRequest {
 		// Parse the response into a directions list.
 		ArrayList<Direction> directions = new ArrayList<>();
 
-		Iterator<JsonNode> directionsIterator = getDirectionsJsonIterator(responseBody);
+		Iterator<JsonNode> directionsIterator = requestDirectionsJsonIterator(responseBody);
 		Direction temp = new BusLine().new Direction();
 		while (directionsIterator.hasNext()) {
 			temp.setDir(directionsIterator.next().get("dir").asText());
@@ -267,7 +312,8 @@ public class BustimeAPIRequest {
 		return directions;
 	}
 
-	public Iterator<JsonNode> getDirectionsJsonIterator(String directionsJsonString) throws IOException {
+	public Iterator<JsonNode> requestDirectionsJsonIterator(String directionsJsonString)
+			throws JsonProcessingException, IOException {
 
 		ObjectMapper mapper = new ObjectMapper();
 		JsonNode directionsNode = mapper.readTree(directionsJsonString).get("bustime-response").get("directions");
@@ -297,7 +343,7 @@ public class BustimeAPIRequest {
 		// Parse the response into a stops list.
 		ArrayList<Stop> stops = new ArrayList<Stop>();
 
-		Iterator<JsonNode> stopsIterator = getStopsJsonIterator(responseBody);
+		Iterator<JsonNode> stopsIterator = requestStopsJsonIterator(responseBody);
 		while (stopsIterator.hasNext()) {
 			JsonNode element = stopsIterator.next();
 
@@ -310,7 +356,8 @@ public class BustimeAPIRequest {
 		return stops;
 	}
 
-	public Iterator<JsonNode> getStopsJsonIterator(String stopsJsonString) throws IOException {
+	public Iterator<JsonNode> requestStopsJsonIterator(String stopsJsonString)
+			throws JsonProcessingException, IOException {
 		ObjectMapper mapper = new ObjectMapper();
 
 		JsonNode stopsNode = mapper.readTree(stopsJsonString).get("bustime-response").get("stops");
