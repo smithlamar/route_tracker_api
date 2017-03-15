@@ -1,4 +1,4 @@
-package com.lamarjs;
+package com.lamarjs.route_tracker;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

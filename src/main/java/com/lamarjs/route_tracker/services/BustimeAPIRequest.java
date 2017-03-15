@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -12,6 +13,7 @@ import org.apache.commons.io.IOUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.lamarjs.route_tracker.exceptions.BusTimeErrorReceivedException;
 import com.lamarjs.route_tracker.models.BusLine;
 import com.lamarjs.route_tracker.models.BusLine.Direction;
 import com.lamarjs.route_tracker.models.BusLine.Stop;
@@ -157,10 +159,24 @@ public class BustimeAPIRequest {
 	 *            Required to make CTA API calls. Can optionally be provided as
 	 *            an environment variable using the no-arg constructor
 	 *            {@link BustimeAPIRequest()}
-	 * @see BustimeAPIRequest()
 	 */
 	public BustimeAPIRequest(String key) {
 		this.key = key;
+	}
+
+	/**
+	 * Convenience method primarily for testing. Allows a requestURL to be
+	 * specified as an argument instead of building it with the helper methods
+	 * after creation of the instance.
+	 * 
+	 * @param requestURL
+	 *            The request url for the CTA API. The send() method has to be
+	 *            called on this instance to actually pass the request and
+	 *            retrieve the data for the responseBody.
+	 *
+	 */
+	public BustimeAPIRequest(URL requestURL) {
+		this.requestURL = requestURL;
 	}
 
 	/**
@@ -242,7 +258,7 @@ public class BustimeAPIRequest {
 	 * @throws MalformedURLException
 	 */
 	public BustimeAPIRequest buildRoutesRequestURL() throws MalformedURLException {
-		return this.buildRequestURL(RequestType.ROUTES, "", true);
+		return buildRequestURL(RequestType.ROUTES, "", true);
 	}
 
 	/**
@@ -262,41 +278,52 @@ public class BustimeAPIRequest {
 	 * 
 	 * @return A list of BusLine objects that represents all routes serviced by
 	 *         the CTA. Further initialization is required for each BusLine
-	 *         object by calling each instances intialize() method. method.
+	 *         object by calling each instances initialize() method. method.
 	 * @throws IOException
 	 * 
 	 * @throws MalformedURLException
+	 * @throws BusTimeErrorReceivedException
+	 *             if the response from the CTA includes an error message.
 	 */
-	public ArrayList<BusLine> requestRoutes() throws MalformedURLException, IOException {
+	public HashMap<String, BusLine> requestRoutes()
+			throws MalformedURLException, IOException, BusTimeErrorReceivedException {
 
 		// Send the get routes request
 		buildRoutesRequestURL().send();
 
-		// TODO: Add tests to confirm that request is properly formatted, sent,
-		// and raw responseBody looks like it should.
-
-		// Parse the response into a directions list.
-		ArrayList<BusLine> busLines = new ArrayList<>();
-
-		Iterator<JsonNode> busLinesIterator = requestRoutesJsonIterator(responseBody);
-
-		while (busLinesIterator.hasNext()) {
-			JsonNode node = busLinesIterator.next();
-			busLines.add(new BusLine(node.get("rt").asText(), node.get("rtnm").asText(), node.get("rtclr").asText()));
-		}
+		// Parse the response into a Map of BusLine objects using their route
+		// codes as keys.
+		HashMap<String, BusLine> busLines = parseRequestRoutesResponse(responseBody);
 
 		return busLines;
 	}
 
-	public Iterator<JsonNode> requestRoutesJsonIterator(String routesJsonString)
-			throws JsonProcessingException, IOException {
+	public HashMap<String, BusLine> parseRequestRoutesResponse(String routesJsonString)
+			throws JsonProcessingException, IOException, BusTimeErrorReceivedException {
+
+		// Parse the response into a directions list.
+		HashMap<String, BusLine> busLines = new HashMap<>();
+		Iterator<JsonNode> busLinesIterator = getRequestRoutesIterator(routesJsonString);
+		while (busLinesIterator.hasNext()) {
+			JsonNode node = busLinesIterator.next();
+			BusLine line = new BusLine(node.get("rt").asText(), node.get("rtnm").asText(), node.get("rtclr").asText());
+			busLines.put(line.getRouteCode(), line);
+		}
+		return busLines;
+	}
+
+	public Iterator<JsonNode> getRequestRoutesIterator(String routesJsonString)
+			throws JsonProcessingException, IOException, BusTimeErrorReceivedException {
 		ObjectMapper mapper = new ObjectMapper();
-		JsonNode busLinesNode = mapper.readTree(routesJsonString).get("bustime-response").get("routes");
-		return busLinesNode.elements(); // FIXME: Getting null pointer here on
-										// live request of getBusLines. Likely
-										// due to error in json parsing with the
-										// mapper or some wiring issue between
-										// the methods involved.
+		JsonNode busLinesNode = mapper.readTree(routesJsonString);
+
+		if (busLinesNode.has("error")) {
+			// TODO: Write tests for me!
+			throw new BusTimeErrorReceivedException(busLinesNode.get("msg").asText());
+		}
+
+		busLinesNode = busLinesNode.get("bustime-response").get("routes");
+		return busLinesNode.elements();
 	}
 
 	/**
@@ -386,10 +413,10 @@ public class BustimeAPIRequest {
 	}
 
 	/**
-	 * @return The last received response body.
+	 * @return the key
 	 */
-	public String getResponseBody() {
-		return responseBody;
+	public String getKey() {
+		return key;
 	}
 
 	/**
@@ -397,6 +424,23 @@ public class BustimeAPIRequest {
 	 */
 	public URL getRequestURL() {
 		return requestURL;
+	}
+
+	/**
+	 * @return The last received response body.
+	 */
+	public String getResponseBody() {
+		return responseBody;
+	}
+
+	/**
+	 * @param key
+	 *            the key to set
+	 * @return
+	 */
+	public BustimeAPIRequest setKey(String key) {
+		this.key = key;
+		return this;
 	}
 
 	/**
@@ -408,23 +452,6 @@ public class BustimeAPIRequest {
 	 */
 	public BustimeAPIRequest setRequestURL(URL requestURL) {
 		this.requestURL = requestURL;
-		return this;
-	}
-
-	/**
-	 * @return the key
-	 */
-	public String getKey() {
-		return key;
-	}
-
-	/**
-	 * @param key
-	 *            the key to set
-	 * @return
-	 */
-	public BustimeAPIRequest setKey(String key) {
-		this.key = key;
 		return this;
 	}
 

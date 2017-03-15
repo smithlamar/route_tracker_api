@@ -1,4 +1,4 @@
-package com.lamarjs;
+package com.lamarjs.route_tracker;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

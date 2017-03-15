@@ -87,9 +87,9 @@ public class BusLine {
 	 * @throws java.net.MalformedURLException
 	 * @throws java.io.IOException
 	 */
-	public void initialize(BustimeAPIRequest request) throws MalformedURLException, IOException {
-		initializeDirections(request);
-		initializeStops(request);
+	public void initialize(BustimeAPIRequest requestService) throws MalformedURLException, IOException {
+		initializeDirections(requestService);
+		initializeStops(requestService);
 	}
 
 	/**
@@ -143,7 +143,7 @@ public class BusLine {
 	 *
 	 * @return
 	 */
-	public String getRoutetName() {
+	public String getRouteName() {
 		return rtnm;
 	}
 
@@ -217,8 +217,8 @@ public class BusLine {
 		 * @throws java.net.MalformedURLException
 		 * @throws java.io.IOException
 		 */
-		public void initializeStops(BustimeAPIRequest request) throws MalformedURLException, IOException {
-			stops = request.requestStops(rt, dir);
+		public void initializeStops(BustimeAPIRequest requestService) throws MalformedURLException, IOException {
+			stops = requestService.requestStops(rt, dir);
 		}
 
 		public String getDirectionName() {
