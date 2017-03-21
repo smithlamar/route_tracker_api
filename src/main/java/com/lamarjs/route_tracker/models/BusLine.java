@@ -22,6 +22,7 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.lamarjs.route_tracker.services.BustimeAPIRequest;
 
 /**
@@ -51,6 +52,7 @@ import com.lamarjs.route_tracker.services.BustimeAPIRequest;
  * @author Lamar J. Smith
  * 
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class BusLine {
 
 	private String rt; // route code (9, 6, 1152, X9)

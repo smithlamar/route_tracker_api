@@ -4,13 +4,17 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lamarjs.route_tracker.exceptions.BusTimeErrorReceivedException;
@@ -28,7 +32,9 @@ import com.lamarjs.route_tracker.models.BusLine.Stop;
  * 
  * @author Lamar J. Smith
  */
+@Service
 public class BustimeAPIRequest {
+	Logger logger = LoggerFactory.getLogger(this.getClass());
 
 	// Base request components
 	/**
@@ -205,7 +211,6 @@ public class BustimeAPIRequest {
 		StringBuilder requestBuilder = new StringBuilder(BUSTIME_REQUEST_BASE).append(requestType.format)
 				.append(API_KEY).append(key).append(paramsBuilder.toString());
 		requestURL = new URL(requestBuilder.toString());
-
 		return this;
 	}
 
@@ -285,37 +290,56 @@ public class BustimeAPIRequest {
 	 * @throws BusTimeErrorReceivedException
 	 *             if the response from the CTA includes an error message.
 	 */
-	public HashMap<String, BusLine> requestRoutes()
-			throws MalformedURLException, IOException, BusTimeErrorReceivedException {
+	public List<BusLine> requestRoutes() throws MalformedURLException, IOException, BusTimeErrorReceivedException {
 
 		// Send the get routes request
 		buildRoutesRequestURL().send();
 
 		// Parse the response into a Map of BusLine objects using their route
 		// codes as keys.
-		HashMap<String, BusLine> busLines = parseRequestRoutesResponse(responseBody);
+		List<BusLine> busLines = parseRequestRoutesResponse(responseBody);
 
 		return busLines;
 	}
 
-	public HashMap<String, BusLine> parseRequestRoutesResponse(String routesJsonString)
+	public List<BusLine> parseRequestRoutesResponse(String response)
 			throws JsonProcessingException, IOException, BusTimeErrorReceivedException {
 
 		// Parse the response into a directions list.
-		HashMap<String, BusLine> busLines = new HashMap<>();
-		Iterator<JsonNode> busLinesIterator = getRequestRoutesIterator(routesJsonString);
-		while (busLinesIterator.hasNext()) {
-			JsonNode node = busLinesIterator.next();
-			BusLine line = new BusLine(node.get("rt").asText(), node.get("rtnm").asText(), node.get("rtclr").asText());
-			busLines.put(line.getRouteCode(), line);
-		}
+		List<BusLine> busLines = new ArrayList<BusLine>();
+
+		String routesNode = unwrapRequestRoutesResponse(response);
+
+		TypeReference<List<BusLine>> typeRef = new TypeReference<List<BusLine>>() {};
+		busLines = new ObjectMapper().readValue(routesNode, typeRef);
+		
+		logger.debug("[parseRequestRoutesResponse(String)] - resulting BusLine at index 0: " + busLines.get(0));
 		return busLines;
 	}
+	// TODO: Replace the below commented method with
+	// getRequestRoutesString(String).
+	// public Iterator<JsonNode> getRequestRoutesIterator(String
+	// routesJsonString)
+	// throws JsonProcessingException, IOException,
+	// BusTimeErrorReceivedException {
+	// ObjectMapper mapper = new ObjectMapper();
+	// JsonNode busLinesNode = mapper.readTree(routesJsonString);
+	//
+	// if (busLinesNode.has("error")) {
+	// // TODO: Write tests for me!
+	// throw new
+	// BusTimeErrorReceivedException(busLinesNode.get("msg").asText());
+	// }
+	//
+	// busLinesNode = busLinesNode.get("bustime-response").get("routes");
+	// return busLinesNode.elements();
+	// }
 
-	public Iterator<JsonNode> getRequestRoutesIterator(String routesJsonString)
+	public String unwrapRequestRoutesResponse(String response)
 			throws JsonProcessingException, IOException, BusTimeErrorReceivedException {
+
 		ObjectMapper mapper = new ObjectMapper();
-		JsonNode busLinesNode = mapper.readTree(routesJsonString);
+		JsonNode busLinesNode = mapper.readTree(response);
 
 		if (busLinesNode.has("error")) {
 			// TODO: Write tests for me!
@@ -323,7 +347,9 @@ public class BustimeAPIRequest {
 		}
 
 		busLinesNode = busLinesNode.get("bustime-response").get("routes");
-		return busLinesNode.elements();
+		String routesJson = mapper.writeValueAsString(busLinesNode);
+
+		return routesJson;
 	}
 
 	/**
