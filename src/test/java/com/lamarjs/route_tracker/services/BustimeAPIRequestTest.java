@@ -8,8 +8,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 
-import org.apache.commons.io.Charsets;
-import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -17,19 +15,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.lamarjs.route_tracker.TestUtils;
 import com.lamarjs.route_tracker.exceptions.BusTimeErrorReceivedException;
 import com.lamarjs.route_tracker.models.BusLine;
 
 public class BustimeAPIRequestTest extends junit.framework.TestSuite {
-	Logger logger;
+	static Logger logger;
 	BustimeAPIRequest request;
 	static HashMap<String, HashMap<String, String>> sampleFiles;
 	BusLine referenceBusLine;
 
 	@BeforeClass
 	public static void onlyOnce() throws IOException {
-		LoggerFactory.getLogger(BustimeAPIRequestTest.class);
-		sampleFiles = getSampleFiles();
+		logger = LoggerFactory.getLogger(BustimeAPIRequestTest.class);
+		sampleFiles = TestUtils.getSampleFiles();
 	}
 
 	@Before
@@ -79,20 +78,6 @@ public class BustimeAPIRequestTest extends junit.framework.TestSuite {
 	// Parse Routes Response Tests
 	///////////////////////////////
 
-	// @Test
-	// public void get_request_routes_iterator_returns_correct_element()
-	// throws JsonProcessingException, IOException,
-	// BusTimeErrorReceivedException {
-	// String expected = "Bronzeville/Union Station";
-	// String actual;
-	//
-	// Iterator<JsonNode> iterator =
-	// request.getRequestRoutesIterator(sampleFiles.get("json").get("routes"));
-	// actual = iterator.next().get("rtnm").asText();
-	//
-	// assertEquals(expected, actual);
-	// }
-
 	@Test
 	public void parse_request_routes_response_returns_busline_with_correct_route_code()
 			throws JsonProcessingException, IOException, BusTimeErrorReceivedException {
@@ -129,34 +114,5 @@ public class BustimeAPIRequestTest extends junit.framework.TestSuite {
 
 		logger.debug("parse_request_routes_response_returns_busline_with_null_directions_property() actual: " + actual);
 		assertEquals(expected.getDirections(), actual.getDirections());
-	}
-
-	/**
-	 * 
-	 * @return A map of sample files from test resources directory.
-	 * @throws IOException
-	 */
-	private static HashMap<String, HashMap<String, String>> getSampleFiles() throws IOException {
-		HashMap<String, HashMap<String, String>> sampleFiles = new HashMap<>();
-		ClassLoader classLoader = BustimeAPIRequestTest.class.getClassLoader();
-		String routesJson = IOUtils.toString(classLoader.getResourceAsStream("sample_json_responses/routes.json"),
-				Charsets.toCharset("UTF-8"));
-		String stopsJson = IOUtils.toString(classLoader.getResourceAsStream("sample_json_responses/stops.json"),
-				Charsets.toCharset("UTF-8"));
-		String routesUrl = IOUtils.toString(classLoader.getResourceAsStream("sample_request_urls/routes.txt"),
-				Charsets.toCharset("UTF-8"));
-		String stopsUrl = IOUtils.toString(classLoader.getResourceAsStream("sample_request_urls/routes.txt"),
-				Charsets.toCharset("UTF-8"));
-
-		sampleFiles.put("json", new HashMap<>());
-		sampleFiles.get("json").put("routes", routesJson);
-		sampleFiles.get("json").put("stops", stopsJson);
-
-		sampleFiles.put("urls", new HashMap<>());
-		sampleFiles.get("urls").put("routes", routesUrl);
-		sampleFiles.get("urls").put("stops", stopsUrl);
-
-		return sampleFiles;
-
 	}
 }

@@ -9,14 +9,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.CollectionType;
 import com.lamarjs.route_tracker.exceptions.BusTimeErrorReceivedException;
 import com.lamarjs.route_tracker.models.BusLine;
 import com.lamarjs.route_tracker.models.BusLine.Direction;
@@ -34,7 +32,6 @@ import com.lamarjs.route_tracker.models.BusLine.Stop;
  */
 @Service
 public class BustimeAPIRequest {
-	Logger logger = LoggerFactory.getLogger(this.getClass());
 
 	// Base request components
 	/**
@@ -141,6 +138,9 @@ public class BustimeAPIRequest {
 	private String responseBody; // The response returned by the CTA API.
 	private String key; // The API key component of a request that can be set as
 						// an environment variable or explicitly set.
+
+	// TODO: Abstract methods concerned with Json parsing to JsonUtilService
+	// interface and BustimeJsonUtil class.
 
 	// Constructors
 
@@ -308,48 +308,32 @@ public class BustimeAPIRequest {
 		// Parse the response into a directions list.
 		List<BusLine> busLines = new ArrayList<BusLine>();
 
-		String routesNode = unwrapRequestRoutesResponse(response);
+		String routesJsonString = unwrapRequestRoutesResponse(response);
 
-		TypeReference<List<BusLine>> typeRef = new TypeReference<List<BusLine>>() {};
-		busLines = new ObjectMapper().readValue(routesNode, typeRef);
-		
-		logger.debug("[parseRequestRoutesResponse(String)] - resulting BusLine at index 0: " + busLines.get(0));
+		ObjectMapper mapper = new ObjectMapper();
+
+		CollectionType type = mapper.getTypeFactory().constructCollectionType(List.class, BusLine.class);
+		busLines = mapper.readValue(routesJsonString, type);
+
 		return busLines;
 	}
-	// TODO: Replace the below commented method with
-	// getRequestRoutesString(String).
-	// public Iterator<JsonNode> getRequestRoutesIterator(String
-	// routesJsonString)
-	// throws JsonProcessingException, IOException,
-	// BusTimeErrorReceivedException {
-	// ObjectMapper mapper = new ObjectMapper();
-	// JsonNode busLinesNode = mapper.readTree(routesJsonString);
-	//
-	// if (busLinesNode.has("error")) {
-	// // TODO: Write tests for me!
-	// throw new
-	// BusTimeErrorReceivedException(busLinesNode.get("msg").asText());
-	// }
-	//
-	// busLinesNode = busLinesNode.get("bustime-response").get("routes");
-	// return busLinesNode.elements();
-	// }
 
 	public String unwrapRequestRoutesResponse(String response)
 			throws JsonProcessingException, IOException, BusTimeErrorReceivedException {
 
 		ObjectMapper mapper = new ObjectMapper();
-		JsonNode busLinesNode = mapper.readTree(response);
+
+		JsonNode busLinesNode = mapper.readTree(response).get("bustime-response");
 
 		if (busLinesNode.has("error")) {
 			// TODO: Write tests for me!
-			throw new BusTimeErrorReceivedException(busLinesNode.get("msg").asText());
+			throw new BusTimeErrorReceivedException(busLinesNode.get("error").get("msg").asText());
 		}
 
-		busLinesNode = busLinesNode.get("bustime-response").get("routes");
-		String routesJson = mapper.writeValueAsString(busLinesNode);
+		busLinesNode = busLinesNode.get("routes");
+		String routesJsonString = mapper.writeValueAsString(busLinesNode);
 
-		return routesJson;
+		return routesJsonString;
 	}
 
 	/**

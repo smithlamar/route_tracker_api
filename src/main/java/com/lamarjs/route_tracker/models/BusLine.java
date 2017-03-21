@@ -22,6 +22,7 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.lamarjs.route_tracker.services.BustimeAPIRequest;
 
@@ -58,6 +59,7 @@ public class BusLine {
 	private String rt; // route code (9, 6, 1152, X9)
 	private String rtnm; // route name
 	private String rtclr; // route color hex value stored as a string
+	@JsonIgnore
 	private ArrayList<Direction> directions; // List of direction objects
 
 	public BusLine() {
@@ -192,9 +194,11 @@ public class BusLine {
 	 * Direction class used to model CTA API direction data of a BusLine. Each
 	 * direction also contains an associated set of stops.
 	 */
+	@JsonIgnoreProperties(ignoreUnknown = true)
 	public class Direction {
 
 		private String dir; // The name of this direction.
+		@JsonIgnore
 		private ArrayList<Stop> stops; // This direction's stops.
 
 		public Direction() {
@@ -257,6 +261,7 @@ public class BusLine {
 	/**
 	 * Stop class used to model CTA API stop data.
 	 */
+	@JsonIgnoreProperties(ignoreUnknown = true)
 	public class Stop {
 
 		private int stpid; // stop id
