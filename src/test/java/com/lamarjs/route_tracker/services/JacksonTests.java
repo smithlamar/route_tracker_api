@@ -46,7 +46,7 @@ public class JacksonTests {
 		// TODO: Find out why BusLine fields aren't being initialized even though the objects are being created.
 		logger.debug(
 				"[given_unwrapped_routes_json_string_mapper_parses_correct_busline_objects()] - resulting BusLine at index 0: "
-						+ busLines.get(0).toString());
+						+ busLines.get(0));
 		logger.debug(
 				"[given_unwrapped_routes_json_string_mapper_parses_correct_busline_objects()] - busLines list size: "
 						+ busLines.size());

@@ -22,8 +22,8 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.lamarjs.route_tracker.services.BustimeAPIRequest;
 
 /**
@@ -59,7 +59,6 @@ public class BusLine {
 	private String rt; // route code (9, 6, 1152, X9)
 	private String rtnm; // route name
 	private String rtclr; // route color hex value stored as a string
-	@JsonIgnore
 	private ArrayList<Direction> directions; // List of direction objects
 
 	public BusLine() {
@@ -167,19 +166,20 @@ public class BusLine {
 	public ArrayList<Direction> getDirections() {
 		return directions;
 	}
-
+	@JsonProperty("rt")
 	public void setRouteCode(String rt) {
 		this.rt = rt;
 	}
-
+	@JsonProperty("rtnm")
 	public void setRouteName(String rtnm) {
 		this.rtnm = rtnm;
 	}
-
+	
+	@JsonProperty("rtclr")
 	public void setRouteColor(String rtclr) {
 		this.rtclr = rtclr;
 	}
-
+	
 	public void setDirections(ArrayList<Direction> directions) {
 		this.directions = directions;
 	}
@@ -198,7 +198,6 @@ public class BusLine {
 	public class Direction {
 
 		private String dir; // The name of this direction.
-		@JsonIgnore
 		private ArrayList<Stop> stops; // This direction's stops.
 
 		public Direction() {
