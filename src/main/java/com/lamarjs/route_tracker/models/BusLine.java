@@ -20,6 +20,7 @@ package com.lamarjs.route_tracker.models;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -54,12 +55,12 @@ import com.lamarjs.route_tracker.services.BustimeAPIRequest;
  * 
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class BusLine {
+public class BusLine extends CTAResponseWrapper {
 
 	private String rt; // route code (9, 6, 1152, X9)
 	private String rtnm; // route name
 	private String rtclr; // route color hex value stored as a string
-	private ArrayList<Direction> directions; // List of direction objects
+	private List<Direction> directions; // List of direction objects
 
 	public BusLine() {
 	};
@@ -163,23 +164,25 @@ public class BusLine {
 	 *         BusLine. Each direction also contains an associated list of
 	 *         stops.
 	 */
-	public ArrayList<Direction> getDirections() {
+	public List<Direction> getDirections() {
 		return directions;
 	}
+
 	@JsonProperty("rt")
 	public void setRouteCode(String rt) {
 		this.rt = rt;
 	}
+
 	@JsonProperty("rtnm")
 	public void setRouteName(String rtnm) {
 		this.rtnm = rtnm;
 	}
-	
+
 	@JsonProperty("rtclr")
 	public void setRouteColor(String rtclr) {
 		this.rtclr = rtclr;
 	}
-	
+
 	public void setDirections(ArrayList<Direction> directions) {
 		this.directions = directions;
 	}

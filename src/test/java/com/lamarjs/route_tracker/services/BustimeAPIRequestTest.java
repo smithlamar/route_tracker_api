@@ -115,4 +115,9 @@ public class BustimeAPIRequestTest extends junit.framework.TestSuite {
 		logger.debug("parse_request_routes_response_returns_busline_with_null_directions_property() actual: " + actual);
 		assertEquals(expected.getDirections(), actual.getDirections());
 	}
+	
+	@Test
+	public void request_routes_returns_correct_buslines() {
+		
+	}
 }

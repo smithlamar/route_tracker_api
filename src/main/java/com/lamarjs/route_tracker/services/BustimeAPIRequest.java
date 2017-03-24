@@ -2,6 +2,7 @@ package com.lamarjs.route_tracker.services;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -9,7 +10,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -298,6 +304,18 @@ public class BustimeAPIRequest {
 		// Parse the response into a Map of BusLine objects using their route
 		// codes as keys.
 		List<BusLine> busLines = parseRequestRoutesResponse(responseBody);
+
+		return busLines;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Autowired
+	public List<BusLine> requestRoutes(RestTemplateBuilder templateBuilder)
+			throws MalformedURLException, IOException, BusTimeErrorReceivedException {
+		RestTemplate template = templateBuilder.build();
+		buildRoutesRequestURL();
+		List<BusLine>busLines = (List<BusLine>) template.exchange(requestURL.toString(), HttpMethod.GET, null, new ParameterizedTypeReference<List<BusLine>>() {
+		});
 
 		return busLines;
 	}
