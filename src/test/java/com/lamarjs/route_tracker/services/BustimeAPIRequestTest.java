@@ -2,22 +2,28 @@ package com.lamarjs.route_tracker.services;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.List;
 
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.web.client.RestClientException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.lamarjs.route_tracker.TestUtils;
 import com.lamarjs.route_tracker.exceptions.BusTimeErrorReceivedException;
 import com.lamarjs.route_tracker.models.BusLine;
+import com.lamarjs.route_tracker.models.CTAResponseWrapper;
 
 public class BustimeAPIRequestTest extends junit.framework.TestSuite {
 	static Logger logger;
@@ -35,6 +41,8 @@ public class BustimeAPIRequestTest extends junit.framework.TestSuite {
 	public void setUp() throws IOException {
 		request = new BustimeAPIRequest();
 		request.setKey("test");
+		request.setResponseWrapper(new CTAResponseWrapper());
+		request.setTemplateBuilder(new RestTemplateBuilder());
 		referenceBusLine = new BusLine("1", "Bronzeville/Union Station", "#336633");
 	}
 
@@ -111,13 +119,16 @@ public class BustimeAPIRequestTest extends junit.framework.TestSuite {
 			throws JsonProcessingException, IOException, BusTimeErrorReceivedException {
 		BusLine expected = referenceBusLine;
 		BusLine actual = request.parseRequestRoutesResponse(sampleFiles.get("json").get("routes")).get(0);
-
-		logger.debug("parse_request_routes_response_returns_busline_with_null_directions_property() actual: " + actual);
 		assertEquals(expected.getDirections(), actual.getDirections());
 	}
-	
+
 	@Test
-	public void request_routes_returns_correct_buslines() {
-		
+	public void request_routes_fills_array_of_buslines() throws RestClientException, URISyntaxException, Exception {
+		request.setKey(System.getenv("BTRK"));
+		int actual = 0;
+		List<BusLine> busLines = request.requestRoutes(request.buildRoutesRequestURL().getRequestURL());
+		actual = busLines.size(); // TODO getting null pointer here.
+		logger.debug("[request_routes_fills_array_buslines()] - parsed buslines list size: " + actual);
+		assertTrue(actual > 0);
 	}
 }

@@ -3,6 +3,7 @@ package com.lamarjs.route_tracker.services;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -12,9 +13,8 @@ import java.util.Map;
 import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -23,8 +23,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.lamarjs.route_tracker.exceptions.BusTimeErrorReceivedException;
 import com.lamarjs.route_tracker.models.BusLine;
-import com.lamarjs.route_tracker.models.BusLine.Direction;
-import com.lamarjs.route_tracker.models.BusLine.Stop;
+import com.lamarjs.route_tracker.models.CTAResponseWrapper;
+import com.lamarjs.route_tracker.models.Direction;
+import com.lamarjs.route_tracker.models.Stop;
 
 /**
  * This class represents a request to (and response from) the CTA Bustime
@@ -140,6 +141,9 @@ public class BustimeAPIRequest {
 	public static final String WEST = "Westbound";
 
 	// Properties
+	private CTAResponseWrapper responseWrapper;
+	private RestTemplateBuilder templateBuilder;
+
 	private URL requestURL; // The request URL.
 	private String responseBody; // The response returned by the CTA API.
 	private String key; // The API key component of a request that can be set as
@@ -187,7 +191,7 @@ public class BustimeAPIRequest {
 	 *            retrieve the data for the responseBody.
 	 *
 	 */
-	public BustimeAPIRequest(URL requestURL) {
+	public BustimeAPIRequest(URL requestURL, String key) {
 		this.requestURL = requestURL;
 	}
 
@@ -308,16 +312,25 @@ public class BustimeAPIRequest {
 		return busLines;
 	}
 
-	@SuppressWarnings("unchecked")
-	@Autowired
-	public List<BusLine> requestRoutes(RestTemplateBuilder templateBuilder)
-			throws MalformedURLException, IOException, BusTimeErrorReceivedException {
+	/**
+	 * Requests a list of all operating BusLines (routes).
+	 * 
+	 * @return A list of BusLine objects that represents all routes serviced by
+	 *         the CTA. Further initialization is required for each BusLine
+	 *         object by calling each instances initialize() method.
+	 * 
+	 * @throws BusTimeErrorReceivedException
+	 *             if the response from the CTA includes an error message.
+	 * @throws URISyntaxException
+	 * @throws RestClientException
+	 */
+	public List<BusLine> requestRoutes(URL requestURL)
+			throws BusTimeErrorReceivedException, RestClientException, URISyntaxException {
 		RestTemplate template = templateBuilder.build();
-		buildRoutesRequestURL();
-		List<BusLine>busLines = (List<BusLine>) template.exchange(requestURL.toString(), HttpMethod.GET, null, new ParameterizedTypeReference<List<BusLine>>() {
-		});
 
-		return busLines;
+		responseWrapper = template.getForObject(new URI(requestURL.toString()), responseWrapper.getClass());
+
+		return (List<BusLine>) responseWrapper.getRoutes();
 	}
 
 	public List<BusLine> parseRequestRoutesResponse(String response)
@@ -377,7 +390,7 @@ public class BustimeAPIRequest {
 		ArrayList<Direction> directions = new ArrayList<>();
 
 		Iterator<JsonNode> directionsIterator = requestDirectionsJsonIterator(responseBody);
-		Direction temp = new BusLine().new Direction();
+		Direction temp = new Direction();
 		while (directionsIterator.hasNext()) {
 			temp.setDir(directionsIterator.next().get("dir").asText());
 			directions.add(temp);
@@ -423,7 +436,7 @@ public class BustimeAPIRequest {
 		while (stopsIterator.hasNext()) {
 			JsonNode element = stopsIterator.next();
 
-			Stop temp = new BusLine().new Stop(element.get("stpid").asInt(), element.get("stpnm").asText(),
+			Stop temp = new Stop(element.get("stpid").asInt(), element.get("stpnm").asText(),
 					element.get("lat").asDouble(), element.get("lon").asDouble());
 
 			stops.add(temp);
@@ -459,6 +472,38 @@ public class BustimeAPIRequest {
 	 */
 	public String getResponseBody() {
 		return responseBody;
+	}
+
+	/**
+	 * @return the responseWrapper
+	 */
+	public CTAResponseWrapper getResponseWrapper() {
+		return responseWrapper;
+	}
+
+	/**
+	 * @return the templateBuilder
+	 */
+	public RestTemplateBuilder getTemplateBuilder() {
+		return templateBuilder;
+	}
+
+	/**
+	 * @param responseWrapper
+	 *            the responseWrapper to set
+	 */
+	@Autowired
+	public void setResponseWrapper(CTAResponseWrapper responseWrapper) {
+		this.responseWrapper = responseWrapper;
+	}
+
+	/**
+	 * @param templateBuilder
+	 *            the templateBuilder to set
+	 */
+	@Autowired
+	public void setTemplateBuilder(RestTemplateBuilder templateBuilder) {
+		this.templateBuilder = templateBuilder;
 	}
 
 	/**

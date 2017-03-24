@@ -8,8 +8,6 @@ import java.util.ArrayList;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.lamarjs.route_tracker.models.BusLine;
-import com.lamarjs.route_tracker.models.BusLine.Direction;
 import com.lamarjs.route_tracker.services.BustimeAPIRequest;
 
 public class BusLineTest {
@@ -28,7 +26,7 @@ public class BusLineTest {
 		 */
 		line = new BusLine("1", "Bronzeville/Union Station", "#ffffff");
 		ArrayList<Direction> directions = new ArrayList<>();
-		directions.add(line.new Direction("Northbound", null));
+		directions.add(new Direction("Northbound", null));
 		line.setDirections(directions);
 	}
 
@@ -70,7 +68,7 @@ public class BusLineTest {
 	public void direction_initialize_stops_test() {
 		try {
 			Direction dir = line.getDirections().get(0);
-			dir.initializeStops(request);
+			dir.initializeStops(request, line.getRouteCode());
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

@@ -55,7 +55,7 @@ import com.lamarjs.route_tracker.services.BustimeAPIRequest;
  * 
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class BusLine extends CTAResponseWrapper {
+public class BusLine {
 
 	private String rt; // route code (9, 6, 1152, X9)
 	private String rtnm; // route name
@@ -117,7 +117,7 @@ public class BusLine extends CTAResponseWrapper {
 	 */
 	public void initializeStops(BustimeAPIRequest request) throws MalformedURLException, IOException {
 		for (Direction dir : directions) {
-			dir.initializeStops(request);
+			dir.initializeStops(request, rt);
 		}
 	}
 
@@ -131,9 +131,9 @@ public class BusLine extends CTAResponseWrapper {
 	public ArrayList<Stop> getStops(Direction dir) throws NoSuchElementException {
 		if (!directions.contains(dir)) {
 			throw new NoSuchElementException("Error attempting to access stops for direction: " + dir
-					+ ". This direction does not exist for the BusLine object: " + this);
+					+ ". This direction does not exist for the BusLine: " + this);
 		}
-		return dir.stops;
+		return dir.getStops();
 	}
 
 	/**
@@ -189,175 +189,6 @@ public class BusLine extends CTAResponseWrapper {
 
 	@Override
 	public String toString() {
-		String nameInfo = rt + " - " + rtnm;
-		return nameInfo;
-	}
-
-	/**
-	 * Direction class used to model CTA API direction data of a BusLine. Each
-	 * direction also contains an associated set of stops.
-	 */
-	@JsonIgnoreProperties(ignoreUnknown = true)
-	public class Direction {
-
-		private String dir; // The name of this direction.
-		private ArrayList<Stop> stops; // This direction's stops.
-
-		public Direction() {
-		};
-
-		/**
-		 *
-		 * @param dir
-		 *            A string representing the direction traveled e.g.
-		 *            "Westbound"
-		 * @param stops
-		 */
-		public Direction(String dir, ArrayList<Stop> stops) {
-			this.dir = dir;
-			this.stops = stops;
-		}
-
-		/**
-		 * Initializes the stops property for this Direction by requesting the
-		 * list of associated bus stops from the CTA API.
-		 *
-		 * @throws java.net.MalformedURLException
-		 * @throws java.io.IOException
-		 */
-		public void initializeStops(BustimeAPIRequest requestService) throws MalformedURLException, IOException {
-			stops = requestService.requestStops(rt, dir);
-		}
-
-		public String getDirectionName() {
-			return dir;
-		}
-
-		/**
-		 *
-		 * @return this Direction's list of stops.
-		 */
-		public ArrayList<Stop> getStops() {
-			return stops;
-		}
-
-		public void setDir(String dir) {
-			this.dir = dir;
-		}
-
-		public void setStops(ArrayList<Stop> stops) {
-			this.stops = stops;
-		}
-
-		/**
-		 *
-		 * @return A string representing this direction.
-		 */
-		@Override
-		public String toString() {
-			return dir;
-		}
-
-	}
-
-	/**
-	 * Stop class used to model CTA API stop data.
-	 */
-	@JsonIgnoreProperties(ignoreUnknown = true)
-	public class Stop {
-
-		private int stpid; // stop id
-		private String stpnm; // stop name
-		private double lat; // latitude
-		private double lon; // longitude
-
-		public Stop() {
-		};
-
-		/**
-		 *
-		 * @param stpid
-		 *            The unique id that identifies this stop along this
-		 *            direction on this BusLine.
-		 * @param stpnm
-		 *            The human readable reference for this stop.
-		 * @param lat
-		 *            The latitudinal location of this stop as a signed Double
-		 *            value.
-		 * @param lon
-		 *            The longitudinal location of this stop as a signed Double
-		 *            value.
-		 */
-		public Stop(int stpid, String stpnm, double lat, double lon) {
-			this.stpid = stpid;
-			this.stpnm = stpnm;
-			this.lat = lat;
-			this.lon = lon;
-		}
-
-		public int getStopId() {
-			return stpid;
-		}
-
-		public String getStopName() {
-			return stpnm;
-		}
-
-		public double getLatitude() {
-			return lat;
-		}
-
-		public double getLongitude() {
-			return lon;
-		}
-
-		/**
-		 * 
-		 * @param stpid
-		 *            The unique id that identifies this stop along this
-		 *            direction on this BusLine.
-		 */
-		public void setStopId(int stpid) {
-			this.stpid = stpid;
-		}
-
-		/**
-		 * 
-		 * @param stpnm
-		 *            The human readable reference for this stop.
-		 */
-		public void setStopName(String stpnm) {
-			this.stpnm = stpnm;
-		}
-
-		/**
-		 * 
-		 * @param lat
-		 *            The latitudinal location of this stop as a signed Double
-		 *            value.
-		 */
-		public void setLatitude(Double lat) {
-			this.lat = lat;
-		}
-
-		/**
-		 * 
-		 * @param lon
-		 *            The longitudinal location of this stop as a signed Double
-		 *            value.
-		 */
-		public void setLongitude(Double lon) {
-			this.lon = lon;
-		}
-
-		/**
-		 *
-		 * @return A string representation (stop name) of this stop.
-		 */
-		@Override
-		public String toString() {
-			return getStopName();
-		}
-
+		return rt + " - " + rtnm;
 	}
 }
