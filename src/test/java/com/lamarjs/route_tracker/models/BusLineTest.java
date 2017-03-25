@@ -12,7 +12,8 @@ import com.lamarjs.route_tracker.services.BustimeAPIRequest;
 
 public class BusLineTest {
 
-	// TODO: Add real tests!
+	// TODO: Re-write these tests to align with the new general desing. Add more
+	// tests.
 
 	BusLine line;
 	BustimeAPIRequest request;

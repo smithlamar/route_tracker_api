@@ -5,7 +5,6 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.lamarjs.route_tracker.models.Stop;
 import com.lamarjs.route_tracker.services.BustimeAPIRequest;
 
 /**

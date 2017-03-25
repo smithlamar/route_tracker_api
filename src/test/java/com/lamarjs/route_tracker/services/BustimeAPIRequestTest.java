@@ -19,11 +19,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.web.client.RestClientException;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.lamarjs.route_tracker.TestUtils;
 import com.lamarjs.route_tracker.exceptions.BusTimeErrorReceivedException;
 import com.lamarjs.route_tracker.models.BusLine;
-import com.lamarjs.route_tracker.models.CTAResponseWrapper;
 
 public class BustimeAPIRequestTest extends junit.framework.TestSuite {
 	static Logger logger;
@@ -38,30 +36,34 @@ public class BustimeAPIRequestTest extends junit.framework.TestSuite {
 	}
 
 	@Before
-	public void setUp() throws IOException {
+	public void setUp() {
 		request = new BustimeAPIRequest();
 		request.setKey("test");
-		request.setResponseWrapper(new CTAResponseWrapper());
 		request.setTemplateBuilder(new RestTemplateBuilder());
 		referenceBusLine = new BusLine("1", "Bronzeville/Union Station", "#336633");
 	}
 
-	// TODO: Add real tests! (Especially now that the classes have appropriate
-	// seams.)
+	// TODO: Add more tests! Especially in the sections that have non.
 
 	///////////////////////////////////
 	// Send Request Method Tests
 	///////////////////////////////////
 	@Test
-	public void send_method_populates_response_body_when_request_url_is_set() throws IOException {
+	public void send_method_populates_response_body_when_request_url_is_set() throws MalformedURLException {
 		request.setRequestURL(new URL(sampleFiles.get("urls").get("routes")));
-		request.send();
+		try {
+			request.send();
+		} catch (BusTimeErrorReceivedException e) {
+
+			logger.debug("[send_method_populates_response_body_when_request_url_is_set()] - bustime error msg: "
+					+ e.getMessage());
+		}
 		assertNotNull(request.getResponseBody());
 	}
 
 	@Test
-	public void get_routes_request_populates_response_body_from_real_key()
-			throws IOException, BusTimeErrorReceivedException {
+	public void request_routes_populates_response_body_from_real_key()
+			throws RestClientException, MalformedURLException, BusTimeErrorReceivedException, URISyntaxException {
 		request.setKey(System.getenv("BTRK"));
 		request.requestRoutes();
 		assertNotNull(request.getResponseBody());
@@ -71,10 +73,6 @@ public class BustimeAPIRequestTest extends junit.framework.TestSuite {
 	// Build Request URL Method Tests
 	///////////////////////////////////
 
-	///////////////////////////////
-	// Build Routes Request Tests
-	///////////////////////////////
-
 	@Test
 	public void build_routes_request_url_has_correct_format() throws MalformedURLException {
 		request.buildRoutesRequestURL();
@@ -82,53 +80,32 @@ public class BustimeAPIRequestTest extends junit.framework.TestSuite {
 		assertEquals(sampleFiles.get("urls").get("routes"), request.getRequestURL().toString());
 	}
 
-	///////////////////////////////
-	// Parse Routes Response Tests
-	///////////////////////////////
+	//////////////////////////////////
+	// Request routes Response Tests
+	//////////////////////////////////
 
 	@Test
-	public void parse_request_routes_response_returns_busline_with_correct_route_code()
-			throws JsonProcessingException, IOException, BusTimeErrorReceivedException {
-		BusLine expected = referenceBusLine;
-		BusLine actual = request.parseRequestRoutesResponse(sampleFiles.get("json").get("routes")).get(0);
-		assertEquals(expected.getRouteCode(), actual.getRouteCode());
-	}
-
-	@Test
-	public void parse_request_routes_response_returns_busline_with_correct_route_name()
-			throws JsonProcessingException, IOException, BusTimeErrorReceivedException {
-		BusLine expected = referenceBusLine;
-		BusLine actual = request.parseRequestRoutesResponse(sampleFiles.get("json").get("routes")).get(0);
-
-		assertEquals(expected.getRouteName(), actual.getRouteName());
-	}
-
-	@Test
-	public void parse_request_routes_response_returns_busline_with_correct_route_color()
-			throws JsonProcessingException, IOException, BusTimeErrorReceivedException {
-		BusLine expected = referenceBusLine;
-		BusLine actual = request.parseRequestRoutesResponse(sampleFiles.get("json").get("routes")).get(0);
-
-		logger.debug("parse_request_routes_response_returns_busline_with_correct_route_color() actual: "
-				+ actual.getRouteColor());
-		assertEquals(expected.getRouteColor(), actual.getRouteColor());
-	}
-
-	@Test
-	public void parse_request_routes_response_returns_busline_with_null_directions_property()
-			throws JsonProcessingException, IOException, BusTimeErrorReceivedException {
-		BusLine expected = referenceBusLine;
-		BusLine actual = request.parseRequestRoutesResponse(sampleFiles.get("json").get("routes")).get(0);
-		assertEquals(expected.getDirections(), actual.getDirections());
-	}
-
-	@Test
-	public void request_routes_fills_array_of_buslines() throws RestClientException, URISyntaxException, Exception {
+	public void request_routes_fills_array_of_buslines()
+			throws RestClientException, MalformedURLException, BusTimeErrorReceivedException, URISyntaxException {
 		request.setKey(System.getenv("BTRK"));
 		int actual = 0;
 		List<BusLine> busLines = request.requestRoutes(request.buildRoutesRequestURL().getRequestURL());
 		actual = busLines.size(); // TODO getting null pointer here.
 		logger.debug("[request_routes_fills_array_buslines()] - parsed buslines list size: " + actual);
 		assertTrue(actual > 0);
+	}
+
+	@Test
+	public void request_routes_throws_bustime_error_received_on_invalid_key()
+			throws RestClientException, MalformedURLException, URISyntaxException {
+		String actual = "";
+		String expected = "Invalid API access key supplied";
+		try {
+			request.requestRoutes(request.buildRoutesRequestURL().getRequestURL());
+		} catch (BusTimeErrorReceivedException e) {
+			actual = e.getMessage();
+		}
+
+		assertTrue(actual.equals(expected));
 	}
 }
