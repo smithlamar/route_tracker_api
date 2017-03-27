@@ -2,69 +2,86 @@ package com.lamarjs.route_tracker.services;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.List;
 
-import org.apache.commons.io.Charsets;
-import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.web.client.RestClientException;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.jayway.jsonpath.Configuration;
+import com.lamarjs.route_tracker.TestUtils;
 import com.lamarjs.route_tracker.exceptions.BusTimeErrorReceivedException;
 import com.lamarjs.route_tracker.models.BusLine;
 
+@RunWith(SpringRunner.class)
+@SpringBootTest
 public class BustimeAPIRequestTest extends junit.framework.TestSuite {
 
-	BustimeAPIRequest request;
+	static Logger logger;
 	static HashMap<String, HashMap<String, String>> sampleFiles;
 	BusLine referenceBusLine;
 
+	@Autowired
+	BustimeAPIRequest request;
+
 	@BeforeClass
 	public static void onlyOnce() throws IOException {
-		sampleFiles = getSampleFiles();
+		logger = LoggerFactory.getLogger(BustimeAPIRequestTest.class);
+		sampleFiles = TestUtils.loadSampleFiles();
 	}
 
 	@Before
-	public void setUp() throws IOException {
-		request = new BustimeAPIRequest();
+	public void setUp() {
 		request.setKey("test");
 		referenceBusLine = new BusLine("1", "Bronzeville/Union Station", "#336633");
 	}
 
-	// TODO: Add real tests! (Especially now that the classes have appropriate
-	// seams.)
+	// TODO: Add more tests! Especially in the sections that have none.
 
 	///////////////////////////////////
 	// Send Request Method Tests
 	///////////////////////////////////
 	@Test
-	public void send_method_populates_response_body_when_request_url_is_set() throws IOException {
+	public void send_method_populates_response_body_when_request_url_is_set()
+			throws MalformedURLException, BusTimeErrorReceivedException {
+
 		request.setRequestURL(new URL(sampleFiles.get("urls").get("routes")));
 		request.send();
 		assertNotNull(request.getResponseBody());
 	}
 
 	@Test
-	public void get_routes_request_populates_response_body_from_real_key() throws IOException, BusTimeErrorReceivedException {
+	public void request_routes_populates_response_body_from_real_key()
+			throws RestClientException, MalformedURLException, URISyntaxException {
+
 		request.setKey(System.getenv("BTRK"));
-		request.requestRoutes();
+
+		try {
+			request.requestRoutes();
+		} catch (BusTimeErrorReceivedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		assertNotNull(request.getResponseBody());
 	}
 
 	///////////////////////////////////
 	// Build Request URL Method Tests
 	///////////////////////////////////
-
-	///////////////////////////////
-	// Build Routes Request Tests
-	///////////////////////////////
 
 	@Test
 	public void build_routes_request_url_has_correct_format() throws MalformedURLException {
@@ -73,87 +90,58 @@ public class BustimeAPIRequestTest extends junit.framework.TestSuite {
 		assertEquals(sampleFiles.get("urls").get("routes"), request.getRequestURL().toString());
 	}
 
-	///////////////////////////////
-	// Parse Routes Response Tests
-	///////////////////////////////
+	//////////////////////////////////
+	// Request routes Response Tests
+	//////////////////////////////////
 
 	@Test
-	public void get_request_routes_iterator_returns_correct_element() throws JsonProcessingException, IOException, BusTimeErrorReceivedException {
-		String expected = "Bronzeville/Union Station";
-		String actual;
+	public void request_routes_fills_array_of_buslines()
+			throws RestClientException, MalformedURLException, BusTimeErrorReceivedException, URISyntaxException {
+		request.setKey(System.getenv("BTRK"));
+		logger.debug("[request_routes_fills_array_of_buslines()] - key: " + request.getKey());
+		int actual = 0;
 
-		Iterator<JsonNode> iterator = request.getRequestRoutesIterator(sampleFiles.get("json").get("routes"));
-		actual = iterator.next().get("rtnm").asText();
-
-		assertEquals(expected, actual);
+		List<BusLine> busLines = request.requestRoutes();
+		actual = busLines.size();
+		logger.debug("[request_routes_fills_array_buslines()] - parsed buslines list size: " + actual);
+		assertTrue(actual > 0);
 	}
 
 	@Test
-	public void parse_request_routes_response_returns_busline_with_correct_route_code()
-			throws JsonProcessingException, IOException, BusTimeErrorReceivedException {
-		BusLine expected = referenceBusLine;
-		BusLine actual = request.parseRequestRoutesResponse(sampleFiles.get("json").get("routes"))
-				.get(expected.getRouteCode());
+	public void request_routes_throws_bustime_error_received_on_invalid_key()
+			throws RestClientException, MalformedURLException, URISyntaxException {
+		String actual = "";
+		String expected = "Invalid API access key supplied";
+		try {
+			request.requestRoutes(request.buildRoutesRequestURL().getRequestURL());
+		} catch (BusTimeErrorReceivedException e) {
+			actual = e.getMessage();
+		}
 
-		assertEquals(expected.getRouteCode(), actual.getRouteCode());
+		assertTrue(actual.equals(expected));
 	}
 
 	@Test
-	public void parse_request_routes_response_returns_busline_with_correct_route_name()
-			throws JsonProcessingException, IOException, BusTimeErrorReceivedException {
-		BusLine expected = referenceBusLine;
-		BusLine actual = request.parseRequestRoutesResponse(sampleFiles.get("json").get("routes"))
-				.get(expected.getRouteCode());
+	public void get_bustime_error_returns_null_given_json_with_no_error()
+			throws RestClientException, MalformedURLException, URISyntaxException {
+		String actual = null;
+		String expected = null;
+		request.setResponseBody(sampleFiles.get("json").get("routes"));
+		actual = request.getBustimeError(request.getResponseBody());
 
-		assertEquals(expected.getRouteName(), actual.getRouteName());
+		assertTrue(actual == expected);
 	}
 
 	@Test
-	public void parse_request_routes_response_returns_busline_with_correct_route_color()
-			throws JsonProcessingException, IOException, BusTimeErrorReceivedException {
-		BusLine expected = referenceBusLine;
-		BusLine actual = request.parseRequestRoutesResponse(sampleFiles.get("json").get("routes"))
-				.get(expected.getRouteCode());
+	public void get_bustime_error_returns_error_string_when_given_json_with_error()
+			throws RestClientException, MalformedURLException, URISyntaxException {
+		String actual = null;
+		String expected = "Invalid API access key supplied";
+		Object responseBody = Configuration.defaultConfiguration().jsonProvider()
+				.parse(sampleFiles.get("json").get("errorInvalidKey"));
 
-		assertEquals(expected.getRouteColor(), actual.getRouteColor());
-	}
+		actual = request.getBustimeError(responseBody);
 
-	@Test
-	public void parse_request_routes_response_returns_busline_with_null_directions_property()
-			throws JsonProcessingException, IOException, BusTimeErrorReceivedException {
-		BusLine expected = referenceBusLine;
-		BusLine actual = request.parseRequestRoutesResponse(sampleFiles.get("json").get("routes"))
-				.get(expected.getRouteCode());
-
-		assertEquals(expected.getDirections(), actual.getDirections());
-	}
-
-	/**
-	 * 
-	 * @return A map of sample files from test resources directory.
-	 * @throws IOException
-	 */
-	private static HashMap<String, HashMap<String, String>> getSampleFiles() throws IOException {
-		HashMap<String, HashMap<String, String>> sampleFiles = new HashMap<>();
-		ClassLoader classLoader = BustimeAPIRequestTest.class.getClassLoader();
-		String routesJson = IOUtils.toString(classLoader.getResourceAsStream("sample_json_responses/routes.json"),
-				Charsets.toCharset("UTF-8"));
-		String stopsJson = IOUtils.toString(classLoader.getResourceAsStream("sample_json_responses/stops.json"),
-				Charsets.toCharset("UTF-8"));
-		String routesUrl = IOUtils.toString(classLoader.getResourceAsStream("sample_request_urls/routes.txt"),
-				Charsets.toCharset("UTF-8"));
-		String stopsUrl = IOUtils.toString(classLoader.getResourceAsStream("sample_request_urls/routes.txt"),
-				Charsets.toCharset("UTF-8"));
-
-		sampleFiles.put("json", new HashMap<>());
-		sampleFiles.get("json").put("routes", routesJson);
-		sampleFiles.get("json").put("stops", stopsJson);
-
-		sampleFiles.put("urls", new HashMap<>());
-		sampleFiles.get("urls").put("routes", routesUrl);
-		sampleFiles.get("urls").put("stops", stopsUrl);
-
-		return sampleFiles;
-
+		assertTrue(actual.equals(expected));
 	}
 }

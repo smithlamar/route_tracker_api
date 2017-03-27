@@ -19,9 +19,12 @@ package com.lamarjs.route_tracker.models;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.NoSuchElementException;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.lamarjs.route_tracker.exceptions.BusTimeErrorReceivedException;
 import com.lamarjs.route_tracker.services.BustimeAPIRequest;
 
 /**
@@ -51,12 +54,13 @@ import com.lamarjs.route_tracker.services.BustimeAPIRequest;
  * @author Lamar J. Smith
  * 
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class BusLine {
 
 	private String rt; // route code (9, 6, 1152, X9)
 	private String rtnm; // route name
 	private String rtclr; // route color hex value stored as a string
-	private ArrayList<Direction> directions; // List of direction objects
+	private List<Direction> directions; // List of direction objects
 
 	public BusLine() {
 	};
@@ -73,7 +77,7 @@ public class BusLine {
 		this.rtclr = rtclr;
 	}
 
-	public BusLine(String rt, String rtnm, String rtclr, ArrayList<Direction> directions) {
+	public BusLine(String rt, String rtnm, String rtclr, List<Direction> directions) {
 		this.rt = rt;
 		this.rtnm = rtnm;
 		this.rtclr = rtclr;
@@ -83,11 +87,12 @@ public class BusLine {
 	/**
 	 * Convenience method makes all necessary requests to the CTA API to get
 	 * this BusLine's serviced directions and associated stops.
+	 * 
+	 * @throws BusTimeErrorReceivedException
 	 *
-	 * @throws java.net.MalformedURLException
 	 * @throws java.io.IOException
 	 */
-	public void initialize(BustimeAPIRequest requestService) throws MalformedURLException, IOException {
+	public void initialize(BustimeAPIRequest requestService) throws BusTimeErrorReceivedException, IOException {
 		initializeDirections(requestService);
 		initializeStops(requestService);
 	}
@@ -95,11 +100,14 @@ public class BusLine {
 	/**
 	 * This method requests the list of directions from the CTA API for that
 	 * this BusLine services and initializes the directions.
+	 * 
+	 * @throws BusTimeErrorReceivedException
 	 *
 	 * @throws java.net.MalformedURLException
 	 * @throws java.io.IOException
 	 */
-	public void initializeDirections(BustimeAPIRequest request) throws MalformedURLException, IOException {
+	public void initializeDirections(BustimeAPIRequest request)
+			throws MalformedURLException, BusTimeErrorReceivedException {
 		directions = request.requestDirections(rt);
 	}
 
@@ -107,13 +115,15 @@ public class BusLine {
 	 * This method requests the list of bus stops from the CTA API for each of
 	 * the directions attached to this BusLine and initializes their stops
 	 * properties.
+	 * 
+	 * @throws BusTimeErrorReceivedException
 	 *
 	 * @throws java.net.MalformedURLException
 	 * @throws java.io.IOException
 	 */
-	public void initializeStops(BustimeAPIRequest request) throws MalformedURLException, IOException {
+	public void initializeStops(BustimeAPIRequest request) throws MalformedURLException, BusTimeErrorReceivedException {
 		for (Direction dir : directions) {
-			dir.initializeStops(request);
+			dir.initializeStops(request, rt);
 		}
 	}
 
@@ -124,12 +134,12 @@ public class BusLine {
 	 * @param dir
 	 * @return List of stops on this route.
 	 */
-	public ArrayList<Stop> getStops(Direction dir) throws NoSuchElementException {
+	public List<Stop> getStops(Direction dir) throws NoSuchElementException {
 		if (!directions.contains(dir)) {
 			throw new NoSuchElementException("Error attempting to access stops for direction: " + dir
-					+ ". This direction does not exist for the BusLine object: " + this);
+					+ ". This direction does not exist for the BusLine: " + this);
 		}
-		return dir.stops;
+		return dir.getStops();
 	}
 
 	/**
@@ -160,195 +170,31 @@ public class BusLine {
 	 *         BusLine. Each direction also contains an associated list of
 	 *         stops.
 	 */
-	public ArrayList<Direction> getDirections() {
+	public List<Direction> getDirections() {
 		return directions;
 	}
 
+	@JsonProperty("rt")
 	public void setRouteCode(String rt) {
 		this.rt = rt;
 	}
 
+	@JsonProperty("rtnm")
 	public void setRouteName(String rtnm) {
 		this.rtnm = rtnm;
 	}
 
+	@JsonProperty("rtclr")
 	public void setRouteColor(String rtclr) {
 		this.rtclr = rtclr;
 	}
 
-	public void setDirections(ArrayList<Direction> directions) {
+	public void setDirections(List<Direction> directions) {
 		this.directions = directions;
 	}
 
 	@Override
 	public String toString() {
-		String nameInfo = rt + " - " + rtnm;
-		return nameInfo;
-	}
-
-	/**
-	 * Direction class used to model CTA API direction data of a BusLine. Each
-	 * direction also contains an associated set of stops.
-	 */
-	public class Direction {
-
-		private String dir; // The name of this direction.
-		private ArrayList<Stop> stops; // This direction's stops.
-
-		public Direction() {
-		};
-
-		/**
-		 *
-		 * @param dir
-		 *            A string representing the direction traveled e.g.
-		 *            "Westbound"
-		 * @param stops
-		 */
-		public Direction(String dir, ArrayList<Stop> stops) {
-			this.dir = dir;
-			this.stops = stops;
-		}
-
-		/**
-		 * Initializes the stops property for this Direction by requesting the
-		 * list of associated bus stops from the CTA API.
-		 *
-		 * @throws java.net.MalformedURLException
-		 * @throws java.io.IOException
-		 */
-		public void initializeStops(BustimeAPIRequest requestService) throws MalformedURLException, IOException {
-			stops = requestService.requestStops(rt, dir);
-		}
-
-		public String getDirectionName() {
-			return dir;
-		}
-
-		/**
-		 *
-		 * @return this Direction's list of stops.
-		 */
-		public ArrayList<Stop> getStops() {
-			return stops;
-		}
-
-		public void setDir(String dir) {
-			this.dir = dir;
-		}
-
-		public void setStops(ArrayList<Stop> stops) {
-			this.stops = stops;
-		}
-
-		/**
-		 *
-		 * @return A string representing this direction.
-		 */
-		@Override
-		public String toString() {
-			return dir;
-		}
-
-	}
-
-	/**
-	 * Stop class used to model CTA API stop data.
-	 */
-	public class Stop {
-
-		private int stpid; // stop id
-		private String stpnm; // stop name
-		private double lat; // latitude
-		private double lon; // longitude
-
-		public Stop() {
-		};
-
-		/**
-		 *
-		 * @param stpid
-		 *            The unique id that identifies this stop along this
-		 *            direction on this BusLine.
-		 * @param stpnm
-		 *            The human readable reference for this stop.
-		 * @param lat
-		 *            The latitudinal location of this stop as a signed Double
-		 *            value.
-		 * @param lon
-		 *            The longitudinal location of this stop as a signed Double
-		 *            value.
-		 */
-		public Stop(int stpid, String stpnm, double lat, double lon) {
-			this.stpid = stpid;
-			this.stpnm = stpnm;
-			this.lat = lat;
-			this.lon = lon;
-		}
-
-		public int getStopId() {
-			return stpid;
-		}
-
-		public String getStopName() {
-			return stpnm;
-		}
-
-		public double getLatitude() {
-			return lat;
-		}
-
-		public double getLongitude() {
-			return lon;
-		}
-
-		/**
-		 * 
-		 * @param stpid
-		 *            The unique id that identifies this stop along this
-		 *            direction on this BusLine.
-		 */
-		public void setStopId(int stpid) {
-			this.stpid = stpid;
-		}
-
-		/**
-		 * 
-		 * @param stpnm
-		 *            The human readable reference for this stop.
-		 */
-		public void setStopName(String stpnm) {
-			this.stpnm = stpnm;
-		}
-
-		/**
-		 * 
-		 * @param lat
-		 *            The latitudinal location of this stop as a signed Double
-		 *            value.
-		 */
-		public void setLatitude(Double lat) {
-			this.lat = lat;
-		}
-
-		/**
-		 * 
-		 * @param lon
-		 *            The longitudinal location of this stop as a signed Double
-		 *            value.
-		 */
-		public void setLongitude(Double lon) {
-			this.lon = lon;
-		}
-
-		/**
-		 *
-		 * @return A string representation (stop name) of this stop.
-		 */
-		@Override
-		public String toString() {
-			return getStopName();
-		}
-
+		return rt + " - " + rtnm;
 	}
 }

@@ -2,21 +2,27 @@ package com.lamarjs.route_tracker.services;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.io.IOUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.PathNotFoundException;
+import com.jayway.jsonpath.TypeRef;
 import com.lamarjs.route_tracker.exceptions.BusTimeErrorReceivedException;
 import com.lamarjs.route_tracker.models.BusLine;
-import com.lamarjs.route_tracker.models.BusLine.Direction;
-import com.lamarjs.route_tracker.models.BusLine.Stop;
+import com.lamarjs.route_tracker.models.Direction;
+import com.lamarjs.route_tracker.models.Stop;
 
 /**
  * This class represents a request to (and response from) the CTA Bustime
@@ -28,6 +34,7 @@ import com.lamarjs.route_tracker.models.BusLine.Stop;
  * 
  * @author Lamar J. Smith
  */
+@Service
 public class BustimeAPIRequest {
 
 	// Base request components
@@ -131,8 +138,11 @@ public class BustimeAPIRequest {
 	public static final String WEST = "Westbound";
 
 	// Properties
+	private RestTemplateBuilder templateBuilder;
+	private Configuration jsonPathConfig;
 	private URL requestURL; // The request URL.
-	private String responseBody; // The response returned by the CTA API.
+	private Object responseBody; // The response returned by the CTA API as a
+									// parsed Json document.
 	private String key; // The API key component of a request that can be set as
 						// an environment variable or explicitly set.
 
@@ -149,6 +159,13 @@ public class BustimeAPIRequest {
 		// The key to be inserted into the request URL key parameter should be
 		// set as an environment variable.
 		key = System.getenv("BTRK");
+	}
+
+	@Autowired
+	public BustimeAPIRequest(RestTemplateBuilder templateBuilder, Configuration jsonPathConfig) {
+		key = System.getenv("BTRK");
+		this.templateBuilder = templateBuilder;
+		this.jsonPathConfig = jsonPathConfig;
 	}
 
 	/**
@@ -175,7 +192,7 @@ public class BustimeAPIRequest {
 	 *            retrieve the data for the responseBody.
 	 *
 	 */
-	public BustimeAPIRequest(URL requestURL) {
+	public BustimeAPIRequest(URL requestURL, String key) {
 		this.requestURL = requestURL;
 	}
 
@@ -205,7 +222,6 @@ public class BustimeAPIRequest {
 		StringBuilder requestBuilder = new StringBuilder(BUSTIME_REQUEST_BASE).append(requestType.format)
 				.append(API_KEY).append(key).append(paramsBuilder.toString());
 		requestURL = new URL(requestBuilder.toString());
-
 		return this;
 	}
 
@@ -230,6 +246,7 @@ public class BustimeAPIRequest {
 
 		StringBuilder requestBuilder = new StringBuilder(BUSTIME_REQUEST_BASE).append(requestType.format)
 				.append(API_KEY).append(key).append(urlParameters).append(returnJson ? F_JSON : "");
+
 		requestURL = new URL(requestBuilder.toString());
 		return this;
 	}
@@ -262,68 +279,73 @@ public class BustimeAPIRequest {
 	}
 
 	/**
-	 * Sends the last built requestURL. {@link buildRequestURL()},
-	 * {@link buildGetRoutesRequest()}, or {@link setRequestURL()} should be
-	 * called first to create a valid request.
+	 * Sends the requestURL. A proper URL can be built using
+	 * {@link buildRequestURL()}, {@link buildGetRoutesRequest()}, or
+	 * {@link setRequestURL()}. This method populates the responseBody with the
+	 * Json returned by the CTA API.
 	 * 
-	 * @throws java.io.IOException
+	 * @throws BusTimeErrorReceivedException
+	 *             if an error message is returned in the CTA response.
 	 */
-	public BustimeAPIRequest send() throws IOException {
-		responseBody = IOUtils.toString(requestURL, "UTF-8");
+	public BustimeAPIRequest send(URL requestURL) {
+
+		RestTemplate template = templateBuilder.build();
+
+		ResponseEntity<String> responseEntity = template.exchange(requestURL.toString(), HttpMethod.GET, null,
+				String.class);
+
+		responseBody = jsonPathConfig.jsonProvider().parse(responseEntity.getBody());
+
 		return this;
 	}
 
+	public BustimeAPIRequest send() {
+		return send(requestURL);
+	}
+
+	public String getBustimeError(Object responseBody) {
+		String error;
+		try {
+			error = JsonPath.read(responseBody, "$.bustime-response.error[0].msg");
+
+		} catch (PathNotFoundException e) {
+			return null;
+		}
+
+		return error;
+	}
+
 	/**
-	 * Requests a list of all operating bus lines (routes).
+	 * Requests a list of all operating BusLines (routes).
 	 * 
 	 * @return A list of BusLine objects that represents all routes serviced by
 	 *         the CTA. Further initialization is required for each BusLine
-	 *         object by calling each instances initialize() method. method.
-	 * @throws IOException
+	 *         object by calling each instances initialize() method.
 	 * 
-	 * @throws MalformedURLException
 	 * @throws BusTimeErrorReceivedException
 	 *             if the response from the CTA includes an error message.
+	 * @throws URISyntaxException
+	 * @throws RestClientException
 	 */
-	public HashMap<String, BusLine> requestRoutes()
-			throws MalformedURLException, IOException, BusTimeErrorReceivedException {
+	public List<BusLine> requestRoutes(URL requestURL)
+			throws BusTimeErrorReceivedException, RestClientException, URISyntaxException {
+		send(requestURL);
 
-		// Send the get routes request
-		buildRoutesRequestURL().send();
-
-		// Parse the response into a Map of BusLine objects using their route
-		// codes as keys.
-		HashMap<String, BusLine> busLines = parseRequestRoutesResponse(responseBody);
-
-		return busLines;
-	}
-
-	public HashMap<String, BusLine> parseRequestRoutesResponse(String routesJsonString)
-			throws JsonProcessingException, IOException, BusTimeErrorReceivedException {
-
-		// Parse the response into a directions list.
-		HashMap<String, BusLine> busLines = new HashMap<>();
-		Iterator<JsonNode> busLinesIterator = getRequestRoutesIterator(routesJsonString);
-		while (busLinesIterator.hasNext()) {
-			JsonNode node = busLinesIterator.next();
-			BusLine line = new BusLine(node.get("rt").asText(), node.get("rtnm").asText(), node.get("rtclr").asText());
-			busLines.put(line.getRouteCode(), line);
-		}
-		return busLines;
-	}
-
-	public Iterator<JsonNode> getRequestRoutesIterator(String routesJsonString)
-			throws JsonProcessingException, IOException, BusTimeErrorReceivedException {
-		ObjectMapper mapper = new ObjectMapper();
-		JsonNode busLinesNode = mapper.readTree(routesJsonString);
-
-		if (busLinesNode.has("error")) {
-			// TODO: Write tests for me!
-			throw new BusTimeErrorReceivedException(busLinesNode.get("msg").asText());
+		String error = getBustimeError(responseBody);
+		if (error != null) {
+			throw new BusTimeErrorReceivedException(error);
 		}
 
-		busLinesNode = busLinesNode.get("bustime-response").get("routes");
-		return busLinesNode.elements();
+		return JsonPath.using(jsonPathConfig).parse(responseBody).read("$.bustime-response.routes[*]",
+				new TypeRef<List<BusLine>>() {
+				});
+	}
+
+	public List<BusLine> requestRoutes()
+			throws BusTimeErrorReceivedException, MalformedURLException, RestClientException, URISyntaxException {
+
+		buildRoutesRequestURL();
+		return requestRoutes(requestURL);
 	}
 
 	/**
@@ -335,35 +357,26 @@ public class BustimeAPIRequest {
 	 *            handled for
 	 * @return A list of Direction objects i.e. ["Northbound", "Southbound"]
 	 *         that the provided BusLine object services.
+	 * @throws BusTimeErrorReceivedException
 	 * @throws IOException
 	 * 
 	 * @throws MalformedURLException
 	 */
-	public ArrayList<Direction> requestDirections(String routeCode) throws MalformedURLException, IOException {
+	public List<Direction> requestDirections(String routeCode)
+			throws MalformedURLException, BusTimeErrorReceivedException {
 
 		// Build the directions request
-		buildRequestURL(RequestType.DIRECTIONS, Parameter.ROUTE + routeCode);
+		buildRequestURL(RequestType.DIRECTIONS, Parameter.ROUTE.Format + routeCode);
 		send();
 
-		// Parse the response into a directions list.
-		ArrayList<Direction> directions = new ArrayList<>();
-
-		Iterator<JsonNode> directionsIterator = requestDirectionsJsonIterator(responseBody);
-		Direction temp = new BusLine().new Direction();
-		while (directionsIterator.hasNext()) {
-			temp.setDir(directionsIterator.next().get("dir").asText());
-			directions.add(temp);
+		String error = getBustimeError(responseBody);
+		if (error != null) {
+			throw new BusTimeErrorReceivedException(error);
 		}
 
-		return directions;
-	}
-
-	public Iterator<JsonNode> requestDirectionsJsonIterator(String directionsJsonString)
-			throws JsonProcessingException, IOException {
-
-		ObjectMapper mapper = new ObjectMapper();
-		JsonNode directionsNode = mapper.readTree(directionsJsonString).get("bustime-response").get("directions");
-		return directionsNode.elements();
+		return JsonPath.using(jsonPathConfig).parse(responseBody).read("$.bustime-response.directions[*]",
+				new TypeRef<List<Direction>>() {
+				});
 	}
 
 	/**
@@ -378,38 +391,28 @@ public class BustimeAPIRequest {
 	 *            for.
 	 *
 	 * @throws MalformedURLException
+	 * @throws BusTimeErrorReceivedException
 	 * @throws IOException
 	 */
-	public ArrayList<Stop> requestStops(String rt, String direction) throws MalformedURLException, IOException {
+	public List<Stop> requestStops(String rt, String direction)
+			throws MalformedURLException, BusTimeErrorReceivedException {
 
 		// Build the stops request
 		StringBuilder paramsBuilder = new StringBuilder(Parameter.ROUTE.Format).append(rt)
 				.append(Parameter.DIRECTION.Format).append(direction);
+
 		buildRequestURL(RequestType.STOPS, paramsBuilder.toString());
 		send();
 
-		// Parse the response into a stops list.
-		ArrayList<Stop> stops = new ArrayList<Stop>();
-
-		Iterator<JsonNode> stopsIterator = requestStopsJsonIterator(responseBody);
-		while (stopsIterator.hasNext()) {
-			JsonNode element = stopsIterator.next();
-
-			Stop temp = new BusLine().new Stop(element.get("stpid").asInt(), element.get("stpnm").asText(),
-					element.get("lat").asDouble(), element.get("lon").asDouble());
-
-			stops.add(temp);
+		String error = getBustimeError(responseBody);
+		if (error != null) {
+			throw new BusTimeErrorReceivedException(error);
 		}
 
-		return stops;
-	}
-
-	public Iterator<JsonNode> requestStopsJsonIterator(String stopsJsonString)
-			throws JsonProcessingException, IOException {
-		ObjectMapper mapper = new ObjectMapper();
-
-		JsonNode stopsNode = mapper.readTree(stopsJsonString).get("bustime-response").get("stops");
-		return stopsNode.elements();
+		// Parse the response into a stops list.
+		return JsonPath.using(jsonPathConfig).parse(responseBody).read("$.bustime-response.stops[*]",
+				new TypeRef<List<Stop>>() {
+				});
 	}
 
 	/**
@@ -429,8 +432,25 @@ public class BustimeAPIRequest {
 	/**
 	 * @return The last received response body.
 	 */
-	public String getResponseBody() {
+	public Object getResponseBody() {
 		return responseBody;
+	}
+
+	/**
+	 * @return the templateBuilder
+	 */
+	public RestTemplateBuilder getTemplateBuilder() {
+		return templateBuilder;
+	}
+
+	/**
+	 * @param templateBuilder
+	 *            the templateBuilder to set
+	 * @return
+	 */
+	public BustimeAPIRequest setTemplateBuilder(RestTemplateBuilder templateBuilder) {
+		this.templateBuilder = templateBuilder;
+		return this;
 	}
 
 	/**
