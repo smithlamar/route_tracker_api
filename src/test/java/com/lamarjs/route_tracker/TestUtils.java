@@ -13,7 +13,7 @@ public class TestUtils {
 	 * @return A map of sample files from test resources directory.
 	 * @throws IOException
 	 */
-	public static HashMap<String, HashMap<String, String>> getSampleFiles() throws IOException {
+	public static HashMap<String, HashMap<String, String>> loadSampleFiles() throws IOException {
 
 		HashMap<String, HashMap<String, String>> sampleFiles = new HashMap<>();
 		ClassLoader classLoader = TestUtils.class.getClassLoader();
@@ -70,4 +70,5 @@ public class TestUtils {
 
 		return sampleFiles;
 	}
+
 }

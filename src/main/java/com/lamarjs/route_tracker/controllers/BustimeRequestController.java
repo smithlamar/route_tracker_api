@@ -30,7 +30,6 @@ public class BustimeRequestController {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		System.out.println("Contoller created line: " + busLines.get(0).getRouteName());
 		for (BusLine line : busLines) {
 			line.initialize(requestService);
 		}

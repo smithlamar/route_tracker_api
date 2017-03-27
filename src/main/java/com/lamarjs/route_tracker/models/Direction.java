@@ -1,9 +1,10 @@
 package com.lamarjs.route_tracker.models;
 
 import java.net.MalformedURLException;
-import java.util.ArrayList;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.lamarjs.route_tracker.exceptions.BusTimeErrorReceivedException;
 import com.lamarjs.route_tracker.services.BustimeAPIRequest;
 
@@ -15,7 +16,7 @@ import com.lamarjs.route_tracker.services.BustimeAPIRequest;
 public class Direction {
 
 	private String dir; // The name of this direction.
-	private ArrayList<Stop> stops; // This direction's stops.
+	private List<Stop> stops; // This direction's stops.
 
 	public Direction() {
 	};
@@ -26,7 +27,7 @@ public class Direction {
 	 *            A string representing the direction traveled e.g. "Westbound"
 	 * @param stops
 	 */
-	public Direction(String dir, ArrayList<Stop> stops) {
+	public Direction(String dir, List<Stop> stops) {
 		this.dir = dir;
 		this.stops = stops;
 	}
@@ -53,15 +54,17 @@ public class Direction {
 	 *
 	 * @return this Direction's list of stops.
 	 */
-	public ArrayList<Stop> getStops() {
+	public List<Stop> getStops() {
 		return stops;
 	}
 
+	@JsonProperty(value = "dir")
 	public void setDir(String dir) {
 		this.dir = dir;
 	}
 
-	public void setStops(ArrayList<Stop> stops) {
+	@JsonProperty(value = "stops")
+	public void setStops(List<Stop> stops) {
 		this.stops = stops;
 	}
 

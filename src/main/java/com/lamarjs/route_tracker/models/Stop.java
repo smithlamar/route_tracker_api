@@ -1,6 +1,7 @@
 package com.lamarjs.route_tracker.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Stop class used to model CTA API stop data.
@@ -59,6 +60,7 @@ public class Stop {
 	 *            The unique id that identifies this stop along this direction
 	 *            on this BusLine.
 	 */
+	@JsonProperty(value = "stpid")
 	public void setStopId(int stpid) {
 		this.stpid = stpid;
 	}
@@ -68,6 +70,7 @@ public class Stop {
 	 * @param stpnm
 	 *            The human readable reference for this stop.
 	 */
+	@JsonProperty(value = "stpnm")
 	public void setStopName(String stpnm) {
 		this.stpnm = stpnm;
 	}
@@ -78,6 +81,7 @@ public class Stop {
 	 *            The latitudinal location of this stop as a signed Double
 	 *            value.
 	 */
+	@JsonProperty(value = "lat")
 	public void setLatitude(Double lat) {
 		this.lat = lat;
 	}
@@ -88,6 +92,7 @@ public class Stop {
 	 *            The longitudinal location of this stop as a signed Double
 	 *            value.
 	 */
+	@JsonProperty(value = "lon")
 	public void setLongitude(Double lon) {
 		this.lon = lon;
 	}

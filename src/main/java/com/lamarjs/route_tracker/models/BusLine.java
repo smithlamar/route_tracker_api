@@ -19,11 +19,8 @@ package com.lamarjs.route_tracker.models;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
-
-import org.springframework.beans.factory.annotation.Autowired;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -80,7 +77,7 @@ public class BusLine {
 		this.rtclr = rtclr;
 	}
 
-	public BusLine(String rt, String rtnm, String rtclr, ArrayList<Direction> directions) {
+	public BusLine(String rt, String rtnm, String rtclr, List<Direction> directions) {
 		this.rt = rt;
 		this.rtnm = rtnm;
 		this.rtclr = rtclr;
@@ -95,7 +92,6 @@ public class BusLine {
 	 *
 	 * @throws java.io.IOException
 	 */
-	@Autowired
 	public void initialize(BustimeAPIRequest requestService) throws BusTimeErrorReceivedException, IOException {
 		initializeDirections(requestService);
 		initializeStops(requestService);
@@ -138,7 +134,7 @@ public class BusLine {
 	 * @param dir
 	 * @return List of stops on this route.
 	 */
-	public ArrayList<Stop> getStops(Direction dir) throws NoSuchElementException {
+	public List<Stop> getStops(Direction dir) throws NoSuchElementException {
 		if (!directions.contains(dir)) {
 			throw new NoSuchElementException("Error attempting to access stops for direction: " + dir
 					+ ". This direction does not exist for the BusLine: " + this);
@@ -193,7 +189,7 @@ public class BusLine {
 		this.rtclr = rtclr;
 	}
 
-	public void setDirections(ArrayList<Direction> directions) {
+	public void setDirections(List<Direction> directions) {
 		this.directions = directions;
 	}
 

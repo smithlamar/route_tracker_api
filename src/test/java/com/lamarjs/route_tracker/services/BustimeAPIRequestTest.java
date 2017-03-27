@@ -14,56 +14,60 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.client.RestClientException;
 
+import com.jayway.jsonpath.Configuration;
 import com.lamarjs.route_tracker.TestUtils;
 import com.lamarjs.route_tracker.exceptions.BusTimeErrorReceivedException;
 import com.lamarjs.route_tracker.models.BusLine;
 
+@RunWith(SpringRunner.class)
+@SpringBootTest
 public class BustimeAPIRequestTest extends junit.framework.TestSuite {
+
 	static Logger logger;
-	BustimeAPIRequest request;
 	static HashMap<String, HashMap<String, String>> sampleFiles;
 	BusLine referenceBusLine;
+
+	@Autowired
+	BustimeAPIRequest request;
 
 	@BeforeClass
 	public static void onlyOnce() throws IOException {
 		logger = LoggerFactory.getLogger(BustimeAPIRequestTest.class);
-		sampleFiles = TestUtils.getSampleFiles();
+		sampleFiles = TestUtils.loadSampleFiles();
 	}
 
 	@Before
 	public void setUp() {
-		request = new BustimeAPIRequest();
 		request.setKey("test");
-		request.setTemplateBuilder(new RestTemplateBuilder());
 		referenceBusLine = new BusLine("1", "Bronzeville/Union Station", "#336633");
 	}
 
-	// TODO: Add more tests! Especially in the sections that have non.
+	// TODO: Add more tests! Especially in the sections that have none.
 
 	///////////////////////////////////
 	// Send Request Method Tests
 	///////////////////////////////////
 	@Test
-	public void send_method_populates_response_body_when_request_url_is_set() throws MalformedURLException {
-		request.setRequestURL(new URL(sampleFiles.get("urls").get("routes")));
-		try {
-			request.send();
-		} catch (BusTimeErrorReceivedException e) {
+	public void send_method_populates_response_body_when_request_url_is_set()
+			throws MalformedURLException, BusTimeErrorReceivedException {
 
-			logger.debug("[send_method_populates_response_body_when_request_url_is_set()] - bustime error msg: "
-					+ e.getMessage());
-		}
+		request.setRequestURL(new URL(sampleFiles.get("urls").get("routes")));
+		request.send();
 		assertNotNull(request.getResponseBody());
 	}
 
 	@Test
 	public void request_routes_populates_response_body_from_real_key()
 			throws RestClientException, MalformedURLException, URISyntaxException {
+
 		request.setKey(System.getenv("BTRK"));
 
 		try {
@@ -113,6 +117,30 @@ public class BustimeAPIRequestTest extends junit.framework.TestSuite {
 		} catch (BusTimeErrorReceivedException e) {
 			actual = e.getMessage();
 		}
+
+		assertTrue(actual.equals(expected));
+	}
+
+	@Test
+	public void get_bustime_error_returns_null_given_json_with_no_error()
+			throws RestClientException, MalformedURLException, URISyntaxException {
+		String actual = null;
+		String expected = null;
+		request.setResponseBody(sampleFiles.get("json").get("routes"));
+		actual = request.getBustimeError(request.getResponseBody());
+
+		assertTrue(actual == expected);
+	}
+
+	@Test
+	public void get_bustime_error_returns_error_string_when_given_json_with_error()
+			throws RestClientException, MalformedURLException, URISyntaxException {
+		String actual = null;
+		String expected = "Invalid API access key supplied";
+		Object responseBody = Configuration.defaultConfiguration().jsonProvider()
+				.parse(sampleFiles.get("json").get("errorInvalidKey"));
+
+		actual = request.getBustimeError(responseBody);
 
 		assertTrue(actual.equals(expected));
 	}

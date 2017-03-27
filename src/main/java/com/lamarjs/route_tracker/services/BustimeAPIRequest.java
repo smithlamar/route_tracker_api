@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -19,6 +18,7 @@ import org.springframework.web.client.RestTemplate;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.PathNotFoundException;
+import com.jayway.jsonpath.TypeRef;
 import com.lamarjs.route_tracker.exceptions.BusTimeErrorReceivedException;
 import com.lamarjs.route_tracker.models.BusLine;
 import com.lamarjs.route_tracker.models.Direction;
@@ -139,6 +139,7 @@ public class BustimeAPIRequest {
 
 	// Properties
 	private RestTemplateBuilder templateBuilder;
+	private Configuration jsonPathConfig;
 	private URL requestURL; // The request URL.
 	private Object responseBody; // The response returned by the CTA API as a
 									// parsed Json document.
@@ -161,9 +162,10 @@ public class BustimeAPIRequest {
 	}
 
 	@Autowired
-	public BustimeAPIRequest(RestTemplateBuilder templateBuilder) {
+	public BustimeAPIRequest(RestTemplateBuilder templateBuilder, Configuration jsonPathConfig) {
 		key = System.getenv("BTRK");
 		this.templateBuilder = templateBuilder;
+		this.jsonPathConfig = jsonPathConfig;
 	}
 
 	/**
@@ -244,6 +246,7 @@ public class BustimeAPIRequest {
 
 		StringBuilder requestBuilder = new StringBuilder(BUSTIME_REQUEST_BASE).append(requestType.format)
 				.append(API_KEY).append(key).append(urlParameters).append(returnJson ? F_JSON : "");
+
 		requestURL = new URL(requestBuilder.toString());
 		return this;
 	}
@@ -276,35 +279,40 @@ public class BustimeAPIRequest {
 	}
 
 	/**
-	 * Sends the last built requestURL. {@link buildRequestURL()},
-	 * {@link buildGetRoutesRequest()}, or {@link setRequestURL()} should be
-	 * called first to create a valid request.
+	 * Sends the requestURL. A proper URL can be built using
+	 * {@link buildRequestURL()}, {@link buildGetRoutesRequest()}, or
+	 * {@link setRequestURL()}. This method populates the responseBody with the
+	 * Json returned by the CTA API.
 	 * 
-	 * @throws java.io.IOException
 	 * @throws BusTimeErrorReceivedException
+	 *             if an error message is returned in the CTA response.
 	 */
-	public BustimeAPIRequest send(URL requestURL) throws BusTimeErrorReceivedException {
+	public BustimeAPIRequest send(URL requestURL) {
+
 		RestTemplate template = templateBuilder.build();
+
 		ResponseEntity<String> responseEntity = template.exchange(requestURL.toString(), HttpMethod.GET, null,
 				String.class);
 
-		responseBody = Configuration.defaultConfiguration().jsonProvider().parse(responseEntity.getBody());
+		responseBody = jsonPathConfig.jsonProvider().parse(responseEntity.getBody());
+
+		return this;
+	}
+
+	public BustimeAPIRequest send() {
+		return send(requestURL);
+	}
+
+	public String getBustimeError(Object responseBody) {
 		String error;
 		try {
 			error = JsonPath.read(responseBody, "$.bustime-response.error[0].msg");
 
 		} catch (PathNotFoundException e) {
-			error = null;
+			return null;
 		}
 
-		if (error != null) {
-			throw new BusTimeErrorReceivedException(error);
-		}
-		return this;
-	}
-
-	public BustimeAPIRequest send() throws BusTimeErrorReceivedException {
-		return send(requestURL);
+		return error;
 	}
 
 	/**
@@ -323,11 +331,19 @@ public class BustimeAPIRequest {
 			throws BusTimeErrorReceivedException, RestClientException, URISyntaxException {
 		send(requestURL);
 
-		return JsonPath.read(responseBody, "$..routes[*]");
+		String error = getBustimeError(responseBody);
+		if (error != null) {
+			throw new BusTimeErrorReceivedException(error);
+		}
+
+		return JsonPath.using(jsonPathConfig).parse(responseBody).read("$.bustime-response.routes[*]",
+				new TypeRef<List<BusLine>>() {
+				});
 	}
 
 	public List<BusLine> requestRoutes()
 			throws BusTimeErrorReceivedException, MalformedURLException, RestClientException, URISyntaxException {
+
 		buildRoutesRequestURL();
 		return requestRoutes(requestURL);
 	}
@@ -346,14 +362,21 @@ public class BustimeAPIRequest {
 	 * 
 	 * @throws MalformedURLException
 	 */
-	public ArrayList<Direction> requestDirections(String routeCode)
+	public List<Direction> requestDirections(String routeCode)
 			throws MalformedURLException, BusTimeErrorReceivedException {
 
 		// Build the directions request
-		buildRequestURL(RequestType.DIRECTIONS, Parameter.ROUTE + routeCode);
+		buildRequestURL(RequestType.DIRECTIONS, Parameter.ROUTE.Format + routeCode);
 		send();
 
-		return JsonPath.read(responseBody, "$..directions[*]");
+		String error = getBustimeError(responseBody);
+		if (error != null) {
+			throw new BusTimeErrorReceivedException(error);
+		}
+
+		return JsonPath.using(jsonPathConfig).parse(responseBody).read("$.bustime-response.directions[*]",
+				new TypeRef<List<Direction>>() {
+				});
 	}
 
 	/**
@@ -371,7 +394,7 @@ public class BustimeAPIRequest {
 	 * @throws BusTimeErrorReceivedException
 	 * @throws IOException
 	 */
-	public ArrayList<Stop> requestStops(String rt, String direction)
+	public List<Stop> requestStops(String rt, String direction)
 			throws MalformedURLException, BusTimeErrorReceivedException {
 
 		// Build the stops request
@@ -381,10 +404,15 @@ public class BustimeAPIRequest {
 		buildRequestURL(RequestType.STOPS, paramsBuilder.toString());
 		send();
 
-		// TODO: Implementation
+		String error = getBustimeError(responseBody);
+		if (error != null) {
+			throw new BusTimeErrorReceivedException(error);
+		}
 
 		// Parse the response into a stops list.
-		return JsonPath.read(responseBody, "$..stops[*]");
+		return JsonPath.using(jsonPathConfig).parse(responseBody).read("$.bustime-response.stops[*]",
+				new TypeRef<List<Stop>>() {
+				});
 	}
 
 	/**
