@@ -19,7 +19,8 @@ public class BustimeRequestController {
 	BustimeAPIRequest requestService;
 
 	@RequestMapping(value = "/getbuslines")
-	public List<BusLine> getBusLines() throws RestClientException, URISyntaxException, IOException {
+	public List<BusLine> getBusLines()
+			throws RestClientException, URISyntaxException, BusTimeErrorReceivedException, IOException {
 
 		List<BusLine> busLines = null;
 
@@ -29,7 +30,7 @@ public class BustimeRequestController {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
+		System.out.println("Contoller created line: " + busLines.get(0).getRouteName());
 		for (BusLine line : busLines) {
 			line.initialize(requestService);
 		}

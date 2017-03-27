@@ -23,8 +23,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.lamarjs.route_tracker.exceptions.BusTimeErrorReceivedException;
 import com.lamarjs.route_tracker.services.BustimeAPIRequest;
 
 /**
@@ -87,11 +90,13 @@ public class BusLine {
 	/**
 	 * Convenience method makes all necessary requests to the CTA API to get
 	 * this BusLine's serviced directions and associated stops.
+	 * 
+	 * @throws BusTimeErrorReceivedException
 	 *
-	 * @throws java.net.MalformedURLException
 	 * @throws java.io.IOException
 	 */
-	public void initialize(BustimeAPIRequest requestService) throws MalformedURLException, IOException {
+	@Autowired
+	public void initialize(BustimeAPIRequest requestService) throws BusTimeErrorReceivedException, IOException {
 		initializeDirections(requestService);
 		initializeStops(requestService);
 	}
@@ -99,11 +104,14 @@ public class BusLine {
 	/**
 	 * This method requests the list of directions from the CTA API for that
 	 * this BusLine services and initializes the directions.
+	 * 
+	 * @throws BusTimeErrorReceivedException
 	 *
 	 * @throws java.net.MalformedURLException
 	 * @throws java.io.IOException
 	 */
-	public void initializeDirections(BustimeAPIRequest request) throws MalformedURLException, IOException {
+	public void initializeDirections(BustimeAPIRequest request)
+			throws MalformedURLException, BusTimeErrorReceivedException {
 		directions = request.requestDirections(rt);
 	}
 
@@ -111,11 +119,13 @@ public class BusLine {
 	 * This method requests the list of bus stops from the CTA API for each of
 	 * the directions attached to this BusLine and initializes their stops
 	 * properties.
+	 * 
+	 * @throws BusTimeErrorReceivedException
 	 *
 	 * @throws java.net.MalformedURLException
 	 * @throws java.io.IOException
 	 */
-	public void initializeStops(BustimeAPIRequest request) throws MalformedURLException, IOException {
+	public void initializeStops(BustimeAPIRequest request) throws MalformedURLException, BusTimeErrorReceivedException {
 		for (Direction dir : directions) {
 			dir.initializeStops(request, rt);
 		}

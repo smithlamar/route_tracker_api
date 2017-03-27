@@ -63,9 +63,15 @@ public class BustimeAPIRequestTest extends junit.framework.TestSuite {
 
 	@Test
 	public void request_routes_populates_response_body_from_real_key()
-			throws RestClientException, MalformedURLException, BusTimeErrorReceivedException, URISyntaxException {
+			throws RestClientException, MalformedURLException, URISyntaxException {
 		request.setKey(System.getenv("BTRK"));
-		request.requestRoutes();
+
+		try {
+			request.requestRoutes();
+		} catch (BusTimeErrorReceivedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		assertNotNull(request.getResponseBody());
 	}
 
@@ -88,9 +94,11 @@ public class BustimeAPIRequestTest extends junit.framework.TestSuite {
 	public void request_routes_fills_array_of_buslines()
 			throws RestClientException, MalformedURLException, BusTimeErrorReceivedException, URISyntaxException {
 		request.setKey(System.getenv("BTRK"));
+		logger.debug("[request_routes_fills_array_of_buslines()] - key: " + request.getKey());
 		int actual = 0;
-		List<BusLine> busLines = request.requestRoutes(request.buildRoutesRequestURL().getRequestURL());
-		actual = busLines.size(); // TODO getting null pointer here.
+
+		List<BusLine> busLines = request.requestRoutes();
+		actual = busLines.size();
 		logger.debug("[request_routes_fills_array_buslines()] - parsed buslines list size: " + actual);
 		assertTrue(actual > 0);
 	}

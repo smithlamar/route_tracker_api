@@ -1,10 +1,10 @@
 package com.lamarjs.route_tracker.models;
 
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.lamarjs.route_tracker.exceptions.BusTimeErrorReceivedException;
 import com.lamarjs.route_tracker.services.BustimeAPIRequest;
 
 /**
@@ -34,11 +34,14 @@ public class Direction {
 	/**
 	 * Initializes the stops property for this Direction by requesting the list
 	 * of associated bus stops from the CTA API.
+	 * 
+	 * @throws BusTimeErrorReceivedException
 	 *
 	 * @throws java.net.MalformedURLException
 	 * @throws java.io.IOException
 	 */
-	public void initializeStops(BustimeAPIRequest requestService, String rt) throws MalformedURLException, IOException {
+	public void initializeStops(BustimeAPIRequest requestService, String rt)
+			throws MalformedURLException, BusTimeErrorReceivedException {
 		stops = requestService.requestStops(rt, dir);
 	}
 

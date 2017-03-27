@@ -160,6 +160,12 @@ public class BustimeAPIRequest {
 		key = System.getenv("BTRK");
 	}
 
+	@Autowired
+	public BustimeAPIRequest(RestTemplateBuilder templateBuilder) {
+		key = System.getenv("BTRK");
+		this.templateBuilder = templateBuilder;
+	}
+
 	/**
 	 * Convenience method primarily for testing. Allows a key to be specified as
 	 * an argument instead of as an environment variable.
@@ -290,6 +296,7 @@ public class BustimeAPIRequest {
 		} catch (PathNotFoundException e) {
 			error = null;
 		}
+
 		if (error != null) {
 			throw new BusTimeErrorReceivedException(error);
 		}
@@ -297,23 +304,7 @@ public class BustimeAPIRequest {
 	}
 
 	public BustimeAPIRequest send() throws BusTimeErrorReceivedException {
-		RestTemplate template = templateBuilder.build();
-		ResponseEntity<String> responseEntity = template.exchange(requestURL.toString(), HttpMethod.GET, null,
-				String.class);
-
-		responseBody = Configuration.defaultConfiguration().jsonProvider().parse(responseEntity.getBody());
-
-		String error;
-		try {
-			error = JsonPath.read(responseBody, "$.bustime-response.error[0].msg");
-
-		} catch (PathNotFoundException e) {
-			error = null;
-		}
-		if (error != null) {
-			throw new BusTimeErrorReceivedException(error);
-		}
-		return this;
+		return send(requestURL);
 	}
 
 	/**
@@ -350,20 +341,19 @@ public class BustimeAPIRequest {
 	 *            handled for
 	 * @return A list of Direction objects i.e. ["Northbound", "Southbound"]
 	 *         that the provided BusLine object services.
+	 * @throws BusTimeErrorReceivedException
 	 * @throws IOException
 	 * 
 	 * @throws MalformedURLException
 	 */
-	public ArrayList<Direction> requestDirections(String routeCode) throws MalformedURLException, IOException {
+	public ArrayList<Direction> requestDirections(String routeCode)
+			throws MalformedURLException, BusTimeErrorReceivedException {
 
 		// Build the directions request
 		buildRequestURL(RequestType.DIRECTIONS, Parameter.ROUTE + routeCode);
+		send();
 
-		// TODO: Implement with RestTemplate/JsonPath
-		// Parse the response into a directions list.
-		ArrayList<Direction> directions = null;
-
-		return directions;
+		return JsonPath.read(responseBody, "$..directions[*]");
 	}
 
 	/**
@@ -378,21 +368,23 @@ public class BustimeAPIRequest {
 	 *            for.
 	 *
 	 * @throws MalformedURLException
+	 * @throws BusTimeErrorReceivedException
 	 * @throws IOException
 	 */
-	public ArrayList<Stop> requestStops(String rt, String direction) throws MalformedURLException, IOException {
+	public ArrayList<Stop> requestStops(String rt, String direction)
+			throws MalformedURLException, BusTimeErrorReceivedException {
 
 		// Build the stops request
 		StringBuilder paramsBuilder = new StringBuilder(Parameter.ROUTE.Format).append(rt)
 				.append(Parameter.DIRECTION.Format).append(direction);
+
 		buildRequestURL(RequestType.STOPS, paramsBuilder.toString());
+		send();
 
 		// TODO: Implementation
 
 		// Parse the response into a stops list.
-		ArrayList<Stop> stops = null;
-
-		return stops;
+		return JsonPath.read(responseBody, "$..stops[*]");
 	}
 
 	/**
@@ -426,10 +418,11 @@ public class BustimeAPIRequest {
 	/**
 	 * @param templateBuilder
 	 *            the templateBuilder to set
+	 * @return
 	 */
-	@Autowired
-	public void setTemplateBuilder(RestTemplateBuilder templateBuilder) {
+	public BustimeAPIRequest setTemplateBuilder(RestTemplateBuilder templateBuilder) {
 		this.templateBuilder = templateBuilder;
+		return this;
 	}
 
 	/**
