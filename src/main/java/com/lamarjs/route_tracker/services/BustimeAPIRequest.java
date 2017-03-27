@@ -392,7 +392,7 @@ public class BustimeAPIRequest {
 	 *
 	 * @throws MalformedURLException
 	 * @throws BusTimeErrorReceivedException
-	 * @throws IOException
+	 * 
 	 */
 	public List<Stop> requestStops(String rt, String direction)
 			throws MalformedURLException, BusTimeErrorReceivedException {
@@ -411,6 +411,56 @@ public class BustimeAPIRequest {
 
 		// Parse the response into a stops list.
 		return JsonPath.using(jsonPathConfig).parse(responseBody).read("$.bustime-response.stops[*]",
+				new TypeRef<List<Stop>>() {
+				});
+	}
+
+	/**
+	 * Requests a list of stops along the given route code and Direction object
+	 * from the CTA API.
+	 *
+	 * @param rt
+	 *            The route code for the route that the direction is associated
+	 *            with
+	 * @param direction
+	 *            The direction along the route that stops should be requested
+	 *            for.
+	 *
+	 * @throws MalformedURLException
+	 * @throws BusTimeErrorReceivedException
+	 * @throws IOException
+	 */
+	public List<Stop> requestPredictions(List<String> stpids, List<String> rts)
+			throws MalformedURLException, BusTimeErrorReceivedException {
+
+		// Collect the passed in stop ids
+		StringBuilder paramsBuilder = new StringBuilder(Parameter.STOPID.Format);
+
+		for (int i = 0; i < stpids.size(); i++) {
+			paramsBuilder.append(stpids.get(i));
+			if (i != stpids.size() - 1) {
+				paramsBuilder.append(",");
+			}
+		}
+
+		paramsBuilder.append(Parameter.ROUTE.Format);
+		for (int i = 0; i < rts.size(); i++) {
+			paramsBuilder.append(rts.get(i));
+			if (i != rts.size() - 1) {
+				paramsBuilder.append(",");
+			}
+		}
+
+		buildRequestURL(RequestType.PREDICTIONS, paramsBuilder.toString());
+		send();
+
+		String error = getBustimeError(responseBody);
+		if (error != null) {
+			throw new BusTimeErrorReceivedException(error);
+		}
+
+		// Parse the response into a stops list.
+		return JsonPath.using(jsonPathConfig).parse(responseBody).read("$.bustime-response.prd[*]",
 				new TypeRef<List<Stop>>() {
 				});
 	}
