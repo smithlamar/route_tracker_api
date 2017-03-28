@@ -11,14 +11,13 @@ public class Prediction {
 	int vid; // Ex: "1315"
 	int dstp; // Ex: 4833
 	String rt; // Ex: "4"
-	String rtdd; // Ex: "4"
 	String rtdir; // Ex: "Northbound"
 	String des; // Ex: "Illinois Center"
 	String prdtm; // Ex: "20170314 11:32"
 	String tablockid; // Ex: "4 -716"
-	int tatripid; // Ex: "10001019"
+	String tatripid; // Ex: "10001019"
 	boolean dly; // Ex: false
-	int prdctdn; // Ex: "7"
+	String prdctdn; // Ex: "7"
 	String zone; // Ex: ""
 
 	/**
@@ -127,21 +126,6 @@ public class Prediction {
 	}
 
 	/**
-	 * @return the rtdd
-	 */
-	public String getRtdd() {
-		return rtdd;
-	}
-
-	/**
-	 * @param rtdd
-	 *            the rtdd to set
-	 */
-	public void setRtdd(String rtdd) {
-		this.rtdd = rtdd;
-	}
-
-	/**
 	 * @return the rtdir
 	 */
 	public String getRtdir() {
@@ -204,7 +188,7 @@ public class Prediction {
 	/**
 	 * @return the tatripid
 	 */
-	public int getTatripid() {
+	public String getTatripid() {
 		return tatripid;
 	}
 
@@ -212,7 +196,7 @@ public class Prediction {
 	 * @param tatripid
 	 *            the tatripid to set
 	 */
-	public void setTatripid(int tatripid) {
+	public void setTatripid(String tatripid) {
 		this.tatripid = tatripid;
 	}
 
@@ -234,7 +218,7 @@ public class Prediction {
 	/**
 	 * @return the prdctdn
 	 */
-	public int getPrdctdn() {
+	public String getPrdctdn() {
 		return prdctdn;
 	}
 
@@ -242,7 +226,7 @@ public class Prediction {
 	 * @param prdctdn
 	 *            the prdctdn to set
 	 */
-	public void setPrdctdn(int prdctdn) {
+	public void setPrdctdn(String prdctdn) {
 		this.prdctdn = prdctdn;
 	}
 

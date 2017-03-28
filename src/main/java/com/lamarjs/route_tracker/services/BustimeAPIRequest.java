@@ -22,6 +22,7 @@ import com.jayway.jsonpath.TypeRef;
 import com.lamarjs.route_tracker.exceptions.BusTimeErrorReceivedException;
 import com.lamarjs.route_tracker.models.BusLine;
 import com.lamarjs.route_tracker.models.Direction;
+import com.lamarjs.route_tracker.models.Prediction;
 import com.lamarjs.route_tracker.models.Stop;
 
 /**
@@ -430,23 +431,23 @@ public class BustimeAPIRequest {
 	 * @throws BusTimeErrorReceivedException
 	 * @throws IOException
 	 */
-	public List<Stop> requestPredictions(List<String> stpids, List<String> rts)
+	public List<Prediction> requestPredictions(String[] strings, String[] strings2)
 			throws MalformedURLException, BusTimeErrorReceivedException {
 
 		// Collect the passed in stop ids
 		StringBuilder paramsBuilder = new StringBuilder(Parameter.STOPID.Format);
 
-		for (int i = 0; i < stpids.size(); i++) {
-			paramsBuilder.append(stpids.get(i));
-			if (i != stpids.size() - 1) {
+		for (int i = 0; i < strings.length; i++) {
+			paramsBuilder.append(strings[i]);
+			if (i != strings.length - 1) {
 				paramsBuilder.append(",");
 			}
 		}
 
 		paramsBuilder.append(Parameter.ROUTE.Format);
-		for (int i = 0; i < rts.size(); i++) {
-			paramsBuilder.append(rts.get(i));
-			if (i != rts.size() - 1) {
+		for (int i = 0; i < strings2.length; i++) {
+			paramsBuilder.append(strings2[i]);
+			if (i != strings2.length - 1) {
 				paramsBuilder.append(",");
 			}
 		}
@@ -461,7 +462,7 @@ public class BustimeAPIRequest {
 
 		// Parse the response into a stops list.
 		return JsonPath.using(jsonPathConfig).parse(responseBody).read("$.bustime-response.prd[*]",
-				new TypeRef<List<Stop>>() {
+				new TypeRef<List<Prediction>>() {
 				});
 	}
 
