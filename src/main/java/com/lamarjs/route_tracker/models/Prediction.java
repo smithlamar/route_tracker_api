@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Prediction {
-	String tmstmp; // Ex: "20170314 11:25"
+	String tmstmp; // Ex: "20170314 11:25" TODO: Make datetime
 	String typ; // Ex: "A"
 	String stpnm; // Ex: "Michigan \u0026 Balbo"
 	int stpid; // Ex: "1584"

@@ -419,6 +419,8 @@ public class BustimeAPIRequest {
 	/**
 	 * Requests a list of stops along the given route code and Direction object
 	 * from the CTA API.
+	 * 
+	 * @param top
 	 *
 	 * @param rt
 	 *            The route code for the route that the direction is associated
@@ -431,26 +433,12 @@ public class BustimeAPIRequest {
 	 * @throws BusTimeErrorReceivedException
 	 * @throws IOException
 	 */
-	public List<Prediction> requestPredictions(String[] strings, String[] strings2)
+	public List<Prediction> requestPredictions(String stpids, String rts, int top)
 			throws MalformedURLException, BusTimeErrorReceivedException {
 
-		// Collect the passed in stop ids
-		StringBuilder paramsBuilder = new StringBuilder(Parameter.STOPID.Format);
-
-		for (int i = 0; i < strings.length; i++) {
-			paramsBuilder.append(strings[i]);
-			if (i != strings.length - 1) {
-				paramsBuilder.append(",");
-			}
-		}
-
-		paramsBuilder.append(Parameter.ROUTE.Format);
-		for (int i = 0; i < strings2.length; i++) {
-			paramsBuilder.append(strings2[i]);
-			if (i != strings2.length - 1) {
-				paramsBuilder.append(",");
-			}
-		}
+		// Format the passed in stop ids and route codes, and top (limit)
+		StringBuilder paramsBuilder = new StringBuilder(Parameter.STOPID.Format).append(stpids)
+				.append(Parameter.ROUTE.Format).append(rts).append(Parameter.LIMIT.Format).append(top);
 
 		buildRequestURL(RequestType.PREDICTIONS, paramsBuilder.toString());
 		send();

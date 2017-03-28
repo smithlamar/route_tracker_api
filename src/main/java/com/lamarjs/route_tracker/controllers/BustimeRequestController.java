@@ -49,13 +49,13 @@ public class BustimeRequestController {
 
 	@RequestMapping(value = "/getpredictions", method = RequestMethod.GET)
 	public List<Prediction> getPredictions(@RequestParam(value = "stpids", required = true) String stpids,
-			@RequestParam(value = "rts", required = false) String rts,
-			@RequestParam(value = "top", required = false) int top) {
+			@RequestParam(value = "rts", required = false, defaultValue = "") String rts,
+			@RequestParam(value = "top", required = false, defaultValue = "5") int top) {
 
 		List<Prediction> predictions = null;
 
 		try {
-			predictions = requestService.requestPredictions(stpids.split(","), rts.split(","));
+			predictions = requestService.requestPredictions(stpids, rts, top);
 		} catch (MalformedURLException | BusTimeErrorReceivedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
