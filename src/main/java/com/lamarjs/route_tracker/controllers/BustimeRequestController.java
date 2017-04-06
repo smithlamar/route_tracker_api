@@ -5,6 +5,8 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -19,8 +21,13 @@ import com.lamarjs.route_tracker.services.BustimeAPIRequest;
 
 @RestController
 public class BustimeRequestController {
-	@Autowired
+	private final Logger log = LoggerFactory.getLogger(this.getClass());
 	BustimeAPIRequest requestService;
+
+	@Autowired
+	public BustimeRequestController(BustimeAPIRequest requestService) {
+		this.requestService = requestService;
+	}
 
 	@RequestMapping(value = "/getbuslines", method = RequestMethod.GET)
 	public List<BusLine> getBusLines() {
@@ -29,8 +36,10 @@ public class BustimeRequestController {
 
 		try {
 			busLines = requestService.requestRoutes();
+
 		} catch (RestClientException | MalformedURLException | BusTimeErrorReceivedException | URISyntaxException e) {
 			// TODO Auto-generated catch block
+			log.error("[getBusLines()] - Exception thrown on requestRoutes() call: " + e.getMessage());
 			e.printStackTrace();
 		}
 
@@ -39,6 +48,8 @@ public class BustimeRequestController {
 				line.initialize(requestService);
 			} catch (BusTimeErrorReceivedException | IOException e) {
 				// TODO Auto-generated catch block
+				log.error("[getBusLines()] - Exception thrown on intialize() call for BusLine: " + line + ". "
+						+ e.getMessage());
 				e.printStackTrace();
 			}
 		}
@@ -58,6 +69,8 @@ public class BustimeRequestController {
 			predictions = requestService.requestPredictions(stpids, rts, top);
 		} catch (MalformedURLException | BusTimeErrorReceivedException e) {
 			// TODO Auto-generated catch block
+			log.error("[getPredictions()] - Exception thrown on requestPredictions() call for stops: " + stpids + ". "
+					+ e.getMessage());
 			e.printStackTrace();
 		}
 

@@ -1,10 +1,10 @@
 {
-    "bustime-response": {
-        "error": [
-            {
-                "rt": "100000",
-                "msg": "No data found for parameter"
-            }
-        ]
-    }
+	"bustime-response": {
+		"error": [
+			{
+				"rt": "1000",
+				"msg": "No data found for parameter"
+			}
+		]
+	}
 }

@@ -518,7 +518,7 @@ public class BustimeAPIRequest {
 	 * @param responseBody
 	 *            the responseBody to set
 	 */
-	public void setResponseBody(String responseBody) {
+	public void setResponseBody(Object responseBody) {
 		this.responseBody = responseBody;
 	}
 }

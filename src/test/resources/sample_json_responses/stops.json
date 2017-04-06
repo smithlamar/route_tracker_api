@@ -20,6 +20,12 @@
 				"lon": -87.612318992615
 			},
 			{
+				"stpid": "18241",
+				"stpnm": "115th Street Metra Station",
+				"lat": 41.685670738112,
+				"lon": -87.612446397502
+			},
+			{
 				"stpid": "1577",
 				"stpnm": "1509 S Michigan",
 				"lat": 41.861902526777,
@@ -576,6 +582,12 @@
 				"stpnm": "King Drive \u0026 112th Street",
 				"lat": 41.690845782451,
 				"lon": -87.61328458786
+			},
+			{
+				"stpid": "14050",
+				"stpnm": "King Drive \u0026 113th Street",
+				"lat": 41.688977747838,
+				"lon": -87.613236308098
 			},
 			{
 				"stpid": "2527",

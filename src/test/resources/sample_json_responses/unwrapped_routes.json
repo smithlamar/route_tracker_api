@@ -1,1 +1,14 @@
-[{"rt":"1","rtnm":"Bronzeville/Union Station","rtclr":"#336633","rtdd":"1"},{"rt":"2","rtnm":"Hyde Park Express","rtclr":"#993366","rtdd":"2"}]
+[
+	{
+		"rt": "1",
+		"rtnm": "Bronzeville/Union Station",
+		"rtclr": "#336633",
+		"rtdd": "1"
+	},
+	{
+		"rt": "2",
+		"rtnm": "Hyde Park Express",
+		"rtclr": "#993366",
+		"rtdd": "2"
+	}
+]

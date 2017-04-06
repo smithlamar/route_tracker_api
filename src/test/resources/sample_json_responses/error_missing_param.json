@@ -1,3 +1,4 @@
+
 {"bustime-response": {"error": [ {
-    "msg": "rt parameter missing"
+    "msg": "Invalid API access key supplied"
 } ] }}

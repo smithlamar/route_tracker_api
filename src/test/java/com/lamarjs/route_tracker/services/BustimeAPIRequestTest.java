@@ -36,6 +36,8 @@ public class BustimeAPIRequestTest extends junit.framework.TestSuite {
 	BusLine referenceBusLine;
 
 	@Autowired
+	Configuration jsonPathConfig;
+	@Autowired
 	BustimeAPIRequest request;
 
 	@BeforeClass
@@ -133,14 +135,13 @@ public class BustimeAPIRequestTest extends junit.framework.TestSuite {
 	}
 
 	@Test
-	public void get_bustime_error_returns_error_string_when_given_json_with_error()
+	public void get_bustime_error_returns_error_string_when_given_parsed_json_with_error()
 			throws RestClientException, MalformedURLException, URISyntaxException {
 		String actual = null;
 		String expected = "Invalid API access key supplied";
-		Object responseBody = Configuration.defaultConfiguration().jsonProvider()
-				.parse(sampleFiles.get("json").get("errorInvalidKey"));
-
-		actual = request.getBustimeError(responseBody);
+		String sampleRawResponseEntity = sampleFiles.get("json").get("errorInvalidKey");
+		Object parsedResponseBody = jsonPathConfig.jsonProvider().parse(sampleRawResponseEntity);
+		actual = request.getBustimeError(parsedResponseBody);
 
 		assertTrue(actual.equals(expected));
 	}
