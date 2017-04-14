@@ -93,7 +93,7 @@ public class BusLineTest {
 	@Test
 	public void jsonpath_stops_parse_test() throws MalformedURLException, BusTimeErrorReceivedException {
 		Direction dir = line.getDirections().get(0);
-		logger.debug("[jsonpath_stops_parse_test()] - dir = " + dir.getDirectionName());
+		logger.debug("[jsonpath_stops_parse_test()] - dir = {}", dir.getDirectionName());
 
 		List<Stop> stops = (List<Stop>) request.requestStops(line.getRouteCode(), dir.getDirectionName());
 

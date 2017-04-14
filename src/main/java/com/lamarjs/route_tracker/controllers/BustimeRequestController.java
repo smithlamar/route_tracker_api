@@ -39,7 +39,7 @@ public class BustimeRequestController {
 
 		} catch (RestClientException | MalformedURLException | BusTimeErrorReceivedException | URISyntaxException e) {
 			// TODO Auto-generated catch block
-			log.error("[getBusLines()] - Exception thrown on requestRoutes() call: " + e.getMessage());
+			log.error("[getBusLines()] - Exception thrown on requestRoutes() call: ", e);
 			e.printStackTrace();
 		}
 
