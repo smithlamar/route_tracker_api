@@ -5,8 +5,6 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -19,9 +17,11 @@ import com.lamarjs.route_tracker.models.BusLine;
 import com.lamarjs.route_tracker.models.Prediction;
 import com.lamarjs.route_tracker.services.BustimeAPIRequest;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @RestController
 public class BustimeRequestController {
-	private final Logger log = LoggerFactory.getLogger(this.getClass());
 	BustimeAPIRequest requestService;
 
 	@Autowired
@@ -39,7 +39,7 @@ public class BustimeRequestController {
 
 		} catch (RestClientException | MalformedURLException | BusTimeErrorReceivedException | URISyntaxException e) {
 			// TODO Auto-generated catch block
-			log.error("[getBusLines()] - Exception thrown on requestRoutes() call: " + e.getMessage());
+			log.error("[getBusLines()] - Exception thrown on requestRoutes() call: ", e);
 			e.printStackTrace();
 		}
 
@@ -48,8 +48,7 @@ public class BustimeRequestController {
 				line.initialize(requestService);
 			} catch (BusTimeErrorReceivedException | IOException e) {
 				// TODO Auto-generated catch block
-				log.error("[getBusLines()] - Exception thrown on intialize() call for BusLine: " + line + ". "
-						+ e.getMessage());
+				log.error("[getBusLines()] - Exception thrown on intialize() call for BusLine: " + line + ". " + e);
 				e.printStackTrace();
 			}
 		}
@@ -70,7 +69,7 @@ public class BustimeRequestController {
 		} catch (MalformedURLException | BusTimeErrorReceivedException e) {
 			// TODO Auto-generated catch block
 			log.error("[getPredictions()] - Exception thrown on requestPredictions() call for stops: " + stpids + ". "
-					+ e.getMessage());
+					+ e);
 			e.printStackTrace();
 		}
 

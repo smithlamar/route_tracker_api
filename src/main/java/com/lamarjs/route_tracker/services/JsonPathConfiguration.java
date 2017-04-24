@@ -14,10 +14,11 @@ public class JsonPathConfiguration {
 	@Bean
 	@Autowired
 	public Configuration configuration(ObjectMapper objectMapper) {
+
 		Configuration config = Configuration.defaultConfiguration().jsonProvider(new JacksonJsonProvider(objectMapper))
 				.mappingProvider(new JacksonMappingProvider(objectMapper));
-		return config;
 
+		return config;
 	}
 
 }

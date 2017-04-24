@@ -12,8 +12,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -22,6 +20,9 @@ import com.lamarjs.route_tracker.TestUtils;
 import com.lamarjs.route_tracker.exceptions.BusTimeErrorReceivedException;
 import com.lamarjs.route_tracker.services.BustimeAPIRequest;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class BusLineTest {
@@ -29,7 +30,6 @@ public class BusLineTest {
 	// TODO: Re-write these tests to align with the new general design. Add more
 	// tests.
 
-	static Logger logger;
 	static HashMap<String, HashMap<String, String>> sampleFiles;
 	BusLine line;
 
@@ -38,9 +38,7 @@ public class BusLineTest {
 
 	@BeforeClass
 	public static void onlyOnce() throws IOException {
-		logger = LoggerFactory.getLogger(BusLineTest.class);
 		sampleFiles = TestUtils.loadSampleFiles();
-
 	}
 
 	@Before
@@ -66,8 +64,8 @@ public class BusLineTest {
 		line.setDirections(null);
 		line.initializeDirections(request);
 
-		assertTrue(line.getDirections().get(0).getDirectionName().equals("Northbound"));
-		assertTrue(line.getDirections().get(1).getDirectionName().equals("Southbound"));
+		assertTrue(line.getDirections().get(0).getDir().equals("Northbound"));
+		assertTrue(line.getDirections().get(1).getDir().equals("Southbound"));
 	}
 
 	@Test
@@ -79,25 +77,25 @@ public class BusLineTest {
 		 * 
 		 */
 		line.initializeDirections(request);
-		assertTrue(line.getDirections().get(0).getDirectionName().equals("Northbound"));
+		assertTrue(line.getDirections().get(0).getDir().equals("Northbound"));
 	}
 
 	@Test
 	public void direction_initialize_stops_test() throws BusTimeErrorReceivedException, MalformedURLException {
 		Direction dir = line.getDirections().get(0);
-		dir.initializeStops(request, line.getRouteCode());
+		dir.initializeStops(request, line.getRt());
 
-		assertTrue("1509 S Michigan".equals(line.getDirections().get(0).getStops().get(0).getStopName()));
+		assertTrue("1509 S Michigan".equals(line.getDirections().get(0).getStops().get(0).getStpnm()));
 	}
 
 	@Test
 	public void jsonpath_stops_parse_test() throws MalformedURLException, BusTimeErrorReceivedException {
 		Direction dir = line.getDirections().get(0);
-		logger.debug("[jsonpath_stops_parse_test()] - dir = " + dir.getDirectionName());
+		log.debug("[jsonpath_stops_parse_test()] - dir = {}", dir.getDir());
 
-		List<Stop> stops = (List<Stop>) request.requestStops(line.getRouteCode(), dir.getDirectionName());
+		List<Stop> stops = (List<Stop>) request.requestStops(line.getRt(), dir.getDir());
 
-		assertTrue("1509 S Michigan".equals(stops.get(0).getStopName()));
+		assertTrue("1509 S Michigan".equals(stops.get(0).getStpnm()));
 	}
 
 }

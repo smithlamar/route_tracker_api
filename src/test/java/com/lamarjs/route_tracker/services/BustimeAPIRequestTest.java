@@ -15,8 +15,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -27,11 +25,13 @@ import com.lamarjs.route_tracker.TestUtils;
 import com.lamarjs.route_tracker.exceptions.BusTimeErrorReceivedException;
 import com.lamarjs.route_tracker.models.BusLine;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class BustimeAPIRequestTest extends junit.framework.TestSuite {
 
-	static Logger logger;
 	static HashMap<String, HashMap<String, String>> sampleFiles;
 	BusLine referenceBusLine;
 
@@ -42,7 +42,6 @@ public class BustimeAPIRequestTest extends junit.framework.TestSuite {
 
 	@BeforeClass
 	public static void onlyOnce() throws IOException {
-		logger = LoggerFactory.getLogger(BustimeAPIRequestTest.class);
 		sampleFiles = TestUtils.loadSampleFiles();
 	}
 
@@ -100,12 +99,12 @@ public class BustimeAPIRequestTest extends junit.framework.TestSuite {
 	public void request_routes_fills_array_of_buslines()
 			throws RestClientException, MalformedURLException, BusTimeErrorReceivedException, URISyntaxException {
 		request.setKey(System.getenv("BTRK"));
-		logger.debug("[request_routes_fills_array_of_buslines()] - key: " + request.getKey());
+		log.debug("[request_routes_fills_array_of_buslines()] - key: {}", request.getKey());
 		int actual = 0;
 
 		List<BusLine> busLines = request.requestRoutes();
 		actual = busLines.size();
-		logger.debug("[request_routes_fills_array_buslines()] - parsed buslines list size: " + actual);
+		log.debug("[request_routes_fills_array_buslines()] - parsed buslines list size: {}", actual);
 		assertTrue(actual > 0);
 	}
 
