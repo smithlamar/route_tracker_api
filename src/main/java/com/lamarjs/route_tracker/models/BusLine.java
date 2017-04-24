@@ -23,9 +23,10 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.lamarjs.route_tracker.exceptions.BusTimeErrorReceivedException;
 import com.lamarjs.route_tracker.services.BustimeAPIRequest;
+
+import lombok.Data;
 
 /**
  * <p>
@@ -54,7 +55,9 @@ import com.lamarjs.route_tracker.services.BustimeAPIRequest;
  * @author Lamar J. Smith
  * 
  */
+
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Data
 public class BusLine {
 
 	private String rt; // route code (9, 6, 1152, X9)
@@ -140,57 +143,6 @@ public class BusLine {
 					+ ". This direction does not exist for the BusLine: " + this);
 		}
 		return dir.getStops();
-	}
-
-	/**
-	 * @return
-	 */
-	public String getRouteCode() {
-		return rt;
-	}
-
-	/**
-	 *
-	 * @return
-	 */
-	public String getRouteName() {
-		return rtnm;
-	}
-
-	/**
-	 *
-	 * @return
-	 */
-	public String getRouteColor() {
-		return rtclr;
-	}
-
-	/**
-	 * @return Returns the list of the Direction objects attached to this
-	 *         BusLine. Each direction also contains an associated list of
-	 *         stops.
-	 */
-	public List<Direction> getDirections() {
-		return directions;
-	}
-
-	@JsonProperty("rt")
-	public void setRouteCode(String rt) {
-		this.rt = rt;
-	}
-
-	@JsonProperty("rtnm")
-	public void setRouteName(String rtnm) {
-		this.rtnm = rtnm;
-	}
-
-	@JsonProperty("rtclr")
-	public void setRouteColor(String rtclr) {
-		this.rtclr = rtclr;
-	}
-
-	public void setDirections(List<Direction> directions) {
-		this.directions = directions;
 	}
 
 	@Override

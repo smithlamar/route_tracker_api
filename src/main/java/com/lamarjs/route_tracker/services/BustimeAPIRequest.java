@@ -25,6 +25,8 @@ import com.lamarjs.route_tracker.models.Direction;
 import com.lamarjs.route_tracker.models.Prediction;
 import com.lamarjs.route_tracker.models.Stop;
 
+import lombok.Data;
+
 /**
  * This class represents a request to (and response from) the CTA Bustime
  * (BusTracker) API. It also provides the methods needed to build then send the
@@ -36,6 +38,7 @@ import com.lamarjs.route_tracker.models.Stop;
  * @author Lamar J. Smith
  */
 @Service
+@Data
 public class BustimeAPIRequest {
 
 	// Base request components
@@ -131,12 +134,6 @@ public class BustimeAPIRequest {
 			return format;
 		}
 	}
-
-	// Direction Names
-	public static final String NORTH = "Northbound";
-	public static final String SOUTH = "Southbound";
-	public static final String EAST = "Eastbound";
-	public static final String WEST = "Westbound";
 
 	// Properties
 	private RestTemplateBuilder templateBuilder;
@@ -452,73 +449,5 @@ public class BustimeAPIRequest {
 		return JsonPath.using(jsonPathConfig).parse(responseBody).read("$.bustime-response.prd[*]",
 				new TypeRef<List<Prediction>>() {
 				});
-	}
-
-	/**
-	 * @return the key
-	 */
-	public String getKey() {
-		return key;
-	}
-
-	/**
-	 * @return The last request URL built.
-	 */
-	public URL getRequestURL() {
-		return requestURL;
-	}
-
-	/**
-	 * @return The last received response body.
-	 */
-	public Object getResponseBody() {
-		return responseBody;
-	}
-
-	/**
-	 * @return the templateBuilder
-	 */
-	public RestTemplateBuilder getTemplateBuilder() {
-		return templateBuilder;
-	}
-
-	/**
-	 * @param templateBuilder
-	 *            the templateBuilder to set
-	 * @return
-	 */
-	public BustimeAPIRequest setTemplateBuilder(RestTemplateBuilder templateBuilder) {
-		this.templateBuilder = templateBuilder;
-		return this;
-	}
-
-	/**
-	 * @param key
-	 *            the key to set
-	 * @return
-	 */
-	public BustimeAPIRequest setKey(String key) {
-		this.key = key;
-		return this;
-	}
-
-	/**
-	 * 
-	 * @param requestURL
-	 *            The URL request that can be sent by this object's
-	 *            {@link send()} method.
-	 * @see send()
-	 */
-	public BustimeAPIRequest setRequestURL(URL requestURL) {
-		this.requestURL = requestURL;
-		return this;
-	}
-
-	/**
-	 * @param responseBody
-	 *            the responseBody to set
-	 */
-	public void setResponseBody(Object responseBody) {
-		this.responseBody = responseBody;
 	}
 }

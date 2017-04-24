@@ -4,15 +4,17 @@ import java.net.MalformedURLException;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.lamarjs.route_tracker.exceptions.BusTimeErrorReceivedException;
 import com.lamarjs.route_tracker.services.BustimeAPIRequest;
+
+import lombok.Data;
 
 /**
  * Direction class used to model CTA API direction data of a BusLine. Each
  * direction also contains an associated set of stops.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Data
 public class Direction {
 
 	private String dir; // The name of this direction.
@@ -44,28 +46,6 @@ public class Direction {
 	public void initializeStops(BustimeAPIRequest requestService, String rt)
 			throws MalformedURLException, BusTimeErrorReceivedException {
 		stops = requestService.requestStops(rt, dir);
-	}
-
-	public String getDirectionName() {
-		return dir;
-	}
-
-	/**
-	 *
-	 * @return this Direction's list of stops.
-	 */
-	public List<Stop> getStops() {
-		return stops;
-	}
-
-	@JsonProperty(value = "dir")
-	public void setDir(String dir) {
-		this.dir = dir;
-	}
-
-	@JsonProperty(value = "stops")
-	public void setStops(List<Stop> stops) {
-		this.stops = stops;
 	}
 
 	/**
