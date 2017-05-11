@@ -14,6 +14,6 @@ Powered by Spring, there are two primary endpoints supported by the api: "/getbu
 
 For more details on the data that is being encapsulated see: http://www.transitchicago.com/assets/1/developer_center/cta_Bus_Tracker_API_Developer_Guide_and_Documentation_20160929.pdf
 
-Checkout the pre-release here: https://github.com/smithlamar/route_tracker_api/releases
+Get the pre-release (v0.0.1) here: https://github.com/smithlamar/route_tracker_api/releases
 
 *Implementation of the CTA's Train Tracker API is planned. The Train Tracker API has a similar implementation to Bus Tracker.
