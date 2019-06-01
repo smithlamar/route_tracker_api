@@ -1,6 +1,8 @@
 # RouteTracker API
 RouteTracker API's purpose is to encapsulate calls to the Chicago Transit Authority's bus and train APIs. It creates objects that are more easily consumable for a mobile app. Additionally, it helps cache results to minimize exhausting the limit of calls per day set by the CTA. Deployable format is a fat jar with embedded Tomcat server.
 
+**This is being re-worked in Groovy at https://github.com/smithlamar/route_tracker_api_redux  - The spririt of this readme still applies but some aspects of the api details and contract will have changed in the new project.
+
 Powered by Spring, there are two primary endpoints supported by the api: "/getbuslines" and "/getpredictions":
 
 - "/getbuslines" encapsulates many calls to the CTA Bus Tracker API to build usable "BusLine" objects. Buslines consist of the route information, the directions it travels, and the stops that are serviced along each direction. Each of these represent 3 different endpoints from the CTA API: "/getroutes", "/getdirections", and "/getstops".
