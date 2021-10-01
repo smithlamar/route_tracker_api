@@ -7,7 +7,7 @@ Powered by Spring, there are two primary endpoints supported by the api: "/getbu
 
 - "/getbuslines" encapsulates many calls to the CTA Bus Tracker API to build usable "BusLine" objects. Buslines consist of the route information, the directions it travels, and the stops that are serviced along each direction. Each of these represent 3 different endpoints from the CTA API: "/getroutes", "/getdirections", and "/getstops".
 
-- "/getpredictions" is a direct translation of the CTA's endpoint of the same path. This endpoint exists solely to abstract the CTA developer key which is required for API use. The additional network time is worth the added key security.
+- "/getpredictions" is a direct translation of the CTA's endpoint of the same path. This endpoint exists solely to abstract the CTA developer key which is required for API use. The additional network time can be worth the added key security in certain situations but a call directly to the original API is still an option for this data.
 
 "/getpredictions" has one required parameter and two optional ones.
 1. stpids=_string_ (Required): Comma-separated list of stpid values that each represent a unique stop along a route.
